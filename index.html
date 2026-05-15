@@ -1,60 +1,72 @@
 <!DOCTYPE html>
-      <h3>Auriculares Gamer</h3>
-      <p class="price">$75.000</p>
-      <button onclick="addToCart('Auriculares Gamer', 75000)">
-        Agregar al carrito
-      </button>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NEXUM V2</title>
+
+  <link rel="stylesheet" href="style.css">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div class="loader" id="loader">
+  <h1>NEXUM</h1>
+</div>
+
+<header>
+  <div class="logo-area">
+    <img src="logo.png">
+    <div>
+      <h1>NEXUM</h1>
+      <p>Venta Tecnológica</p>
     </div>
-
-    <div class="product-card">
-      <img src="https://images.unsplash.com/photo-1527814050087-3793815479db?q=80&w=1000" alt="Teclado">
-      <h3>Teclado RGB</h3>
-      <p class="price">$58.000</p>
-      <button onclick="addToCart('Teclado RGB', 58000)">
-        Agregar al carrito
-      </button>
-    </div>
-
-    <div class="product-card">
-      <img src="https://images.unsplash.com/photo-1587202372775-e229f172b9d7?q=80&w=1000" alt="Mouse Gamer">
-      <h3>Mouse Gamer</h3>
-      <p class="price">$32.000</p>
-      <button onclick="addToCart('Mouse Gamer', 32000)">
-        Agregar al carrito
-      </button>
-    </div>
-
-  </section>
-
-  <div class="cart" id="cart">
-    <h2>Carrito</h2>
-
-    <ul id="cart-items"></ul>
-
-    <h3>Total: $<span id="total">0</span></h3>
-
-    <a
-      id="whatsapp-order"
-      target="_blank"
-      class="buy-btn"
-    >
-      Comprar por WhatsApp
-    </a>
   </div>
 
-  <a
-    href="https://wa.me/5493364000000?text=Hola%20NEXUM"
-    class="whatsapp-float"
-    target="_blank"
-  >
-    💬
-  </a>
+  <div class="header-buttons">
+    <button onclick="toggleTheme()">🌙</button>
+    <button onclick="toggleCart()">🛒 <span id="cart-count">0</span></button>
+  </div>
+</header>
 
-  <footer>
-    <h3>@nexum_sn</h3>
-    <p>nexum3.wordpress.com</p>
-  </footer>
+<section class="hero">
+  <h2>TECNOLOGÍA DEL FUTURO</h2>
+  <p>Gaming, periféricos y smartphones premium.</p>
+</section>
 
-  <script src="script.js"></script>
-</body>
+<section class="filters">
+  <input type="text" id="search" placeholder="Buscar productos..." onkeyup="searchProducts()">
+
+  <select id="category" onchange="filterCategory()">
+    <option value="all">Todas las categorías</option>
+    <option value="celulares">Celulares</option>
+    <option value="gaming">Gaming</option>
+    <option value="audio">Audio</option>
+  </select>
+</section>
+
+<section class="products" id="products">
+
+  <div class="card" data-name="iphone 15" data-category="celulares">
+    <img src="https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?q=80&w=1000">
+    <h3>iPhone 15</h3>
+    <p>$1.200.000</p>
+    <button onclick="addToCart('iPhone 15',1200000)">Agregar</button>
+  </div>
+
+  <div class="card" data-name="auriculares gamer" data-category="audio">
+    <img src="https://images.unsplash.com/photo-1583394838336-acd977736f90?q=80&w=1000">
+    <h3>Auriculares Gamer</h3>
+    <p>$75.000</p>
+    <button onclick="addToCart('Auriculares Gamer',75000)">Agregar</button>
+  </div>
+
+  <div class="card" data-name="teclado rgb" data-category="gaming">
+    <img src="https://images.unsplash.com/photo-1527814050087-3793815479db?q=80&w=1000">
+    <h3>Teclado RGB</h3>
+    <p>$58.000</p>
+    <button onclick="addToCart('Teclado RGB',58000)">Agregar</button>
 </html>
