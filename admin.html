@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nexum Admin</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="./assets/favicon.png?v=2" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="./index.html" aria-label="Volver a Nexum">
+        <img class="brand-logo" src="./assets/Logo Logotipo Diseño Marca Personal Sencillo Rosa (1).png" alt="" onload="this.nextElementSibling.remove()" onerror="this.remove()" />
+        <span class="brand-mark">NX</span>
+        <span>Nexum Admin</span>
+      </a>
+      <nav class="nav-links" aria-label="Navegacion administrador">
+        <a href="./index.html">Ver tienda</a>
+      </nav>
+    </header>
+
+    <main class="admin-page">
+      <section class="admin-login" id="adminLogin" aria-label="Ingreso administrador">
+        <form class="admin-login-box" id="adminLoginForm">
+          <h2>Administrador</h2>
+          <label>
+            Clave
+            <input type="password" id="adminPassword" autocomplete="current-password" required />
+          </label>
+          <button class="primary-link" type="submit">Entrar</button>
+          <span class="admin-message" id="adminLoginMessage"></span>
+        </form>
+      </section>
+
+      <section class="admin-panel" id="adminPanel" aria-label="Panel administrador" hidden>
+        <div class="admin-panel-header">
+          <div>
+            <p class="eyebrow">Gestion</p>
+            <h2>Productos</h2>
+          </div>
+          <a class="back-button" href="./index.html">Ver tienda</a>
+        </div>
+
+        <form class="admin-form" id="adminForm">
+          <input type="hidden" id="adminProductId" />
+          <label>
+            Nombre
+            <input type="text" id="adminName" required />
+          </label>
+          <label>
+            Categoria
+            <select id="adminCategory" required>
+              <option value="parlantes">Parlantes</option>
+              <option value="smartwatch">Smartwatch</option>
+              <option value="cables">Cables</option>
+              <option value="adaptadores">Adaptadores</option>
+            </select>
+          </label>
+          <div class="admin-form-row">
+            <label>
+              Precio
+              <input type="number" id="adminPrice" min="0" step="1" required />
+            </label>
+            <label>
+              Stock
+              <input type="number" id="adminStock" min="0" step="1" required />
+            </label>
+          </div>
+          <label>
+            Descripcion
+            <textarea id="adminDescription" rows="3" required></textarea>
+          </label>
+          <label>
+            Colores
+            <input type="text" id="adminColors" placeholder="Violeta:#6c37b8, Negro:#050505" />
+          </label>
+          <label>
+            Imagen
+            <input type="file" id="adminImage" accept="image/*" />
+          </label>
+          <div class="admin-actions">
+            <button class="add-button" type="submit">Guardar producto</button>
+            <button class="back-button" type="button" id="adminClear">Limpiar</button>
+          </div>
+        </form>
+
+        <div class="admin-products" id="adminProducts"></div>
+      </section>
+    </main>
+
+    <script src="./admin.js"></script>
+  </body>
+</html>

@@ -1,72 +1,166 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NEXUM V2</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nexum</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="./assets/favicon.png?v=2" />
+    <link rel="shortcut icon" type="image/png" href="./assets/favicon.png?v=2" />
+    <link rel="apple-touch-icon" href="./assets/favicon.png?v=2" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="#" aria-label="Nexum">
+        <img class="brand-logo" src="./assets/Logo Logotipo Diseño Marca Personal Sencillo Rosa (1).png" alt="" onload="this.nextElementSibling.remove()" onerror="this.remove()" />
+        <span class="brand-mark">NX</span>
+        <span>Nexum</span>
+      </a>
 
-  <link rel="stylesheet" href="style.css">
+      <nav class="nav-links" aria-label="Navegacion principal">
+        <a href="#productos">Productos</a>
+        <a href="#envios">Envios</a>
+        <a href="#contacto">Contacto</a>
+      </nav>
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
-</head>
-<body>
+      <button class="cart-button" type="button" id="openCart" aria-label="Abrir carrito">
+        <img class="cart-icon" src="./assets/cart-icon.svg" alt="" aria-hidden="true" />
+        <span class="cart-count" id="cartCount">0</span>
+      </button>
+    </header>
 
-<div class="loader" id="loader">
-  <h1>NEXUM</h1>
-</div>
+    <main>
+      <section class="hero-carousel" aria-label="Informacion destacada">
+        <div class="carousel-track" id="carouselTrack">
+          <article class="carousel-slide is-active">
+            <img src="./assets/carousel-pagos.png" alt="Formas de pago: transferencia y efectivo" />
+          </article>
+          <article class="carousel-slide">
+            <img src="./assets/carousel-envios.png" alt="Envios locales en San Nicolas y alrededores" />
+          </article>
+        </div>
 
-<header>
-  <div class="logo-area">
-    <img src="logo.png">
-    <div>
-      <h1>NEXUM</h1>
-      <p>Venta Tecnológica</p>
-    </div>
-  </div>
+        <button class="carousel-button carousel-prev" type="button" id="carouselPrev" aria-label="Imagen anterior">
+          <
+        </button>
+        <button class="carousel-button carousel-next" type="button" id="carouselNext" aria-label="Imagen siguiente">
+          >
+        </button>
 
-  <div class="header-buttons">
-    <button onclick="toggleTheme()">🌙</button>
-    <button onclick="toggleCart()">🛒 <span id="cart-count">0</span></button>
-  </div>
-</header>
+        <div class="carousel-dots" aria-label="Seleccionar imagen">
+          <button class="carousel-dot is-active" type="button" data-slide="0" aria-label="Ver formas de pago"></button>
+          <button class="carousel-dot" type="button" data-slide="1" aria-label="Ver informacion de envios"></button>
+        </div>
+      </section>
 
-<section class="hero">
-  <h2>TECNOLOGÍA DEL FUTURO</h2>
-  <p>Gaming, periféricos y smartphones premium.</p>
-</section>
+      <section class="section" id="productos">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Catalogo de</p>
+            <h2 id="catalogTitle">Productos</h2>
+          </div>
+          <p class="section-copy" id="catalogDescription">Elegi la categoria deseada.</p>
+        </div>
 
-<section class="filters">
-  <input type="text" id="search" placeholder="Buscar productos..." onkeyup="searchProducts()">
+        <div class="products-grid" id="productsGrid" aria-live="polite"></div>
+      </section>
 
-  <select id="category" onchange="filterCategory()">
-    <option value="all">Todas las categorías</option>
-    <option value="celulares">Celulares</option>
-    <option value="gaming">Gaming</option>
-    <option value="audio">Audio</option>
-  </select>
-</section>
+      <section class="info-band" id="envios">
+        <article>
+          <h3>Compra simple</h3>
+          <p>Arma el carrito y envia el detalle completo por WhatsApp.</p>
+        </article>
+        <article>
+          <h3>Productos utiles</h3>
+          <p>Audio, carga, conectividad y accesorios para celulares y notebooks.</p>
+        </article>
+        <article>
+          <h3>Atencion directa</h3>
+          <p>Coordinamos disponibilidad, entrega y forma de pago por mensaje.</p>
+        </article>
+      </section>
 
-<section class="products" id="products">
+      <section class="trust-section" aria-label="Por que elegir Nexum">
+        <div class="trust-logo-panel">
+          <img src="./assets/Logo Logotipo Diseño Marca Personal Sencillo Rosa (1).png" alt="Nexum" />
+        </div>
+        <div class="trust-content">
+          <h2>¿Por que elegir Nexum?</h2>
+          <ul class="trust-list">
+            <li>Control de calidad</li>
+            <li>Metodos de pagos seguros</li>
+            <li>Atencion personalizada</li>
+            <li>Seguridad en cada compra</li>
+          </ul>
+        </div>
+      </section>
+    </main>
 
-  <div class="card" data-name="iphone 15" data-category="celulares">
-    <img src="https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?q=80&w=1000">
-    <h3>iPhone 15</h3>
-    <p>$1.200.000</p>
-    <button onclick="addToCart('iPhone 15',1200000)">Agregar</button>
-  </div>
+    <aside class="cart-panel" id="cartPanel" aria-label="Carrito de compras" aria-hidden="true">
+      <div class="cart-panel-header">
+        <div>
+          <p class="eyebrow">Pedido</p>
+          <h2>Tu carrito</h2>
+        </div>
+        <button class="icon-button" type="button" id="closeCart" aria-label="Cerrar carrito">x</button>
+      </div>
 
-  <div class="card" data-name="auriculares gamer" data-category="audio">
-    <img src="https://images.unsplash.com/photo-1583394838336-acd977736f90?q=80&w=1000">
-    <h3>Auriculares Gamer</h3>
-    <p>$75.000</p>
-    <button onclick="addToCart('Auriculares Gamer',75000)">Agregar</button>
-  </div>
+      <div class="cart-items" id="cartItems"></div>
 
-  <div class="card" data-name="teclado rgb" data-category="gaming">
-    <img src="https://images.unsplash.com/photo-1527814050087-3793815479db?q=80&w=1000">
-    <h3>Teclado RGB</h3>
-    <p>$58.000</p>
-    <button onclick="addToCart('Teclado RGB',58000)">Agregar</button>
+      <div class="cart-empty" id="cartEmpty">
+        <strong>El carrito esta vacio</strong>
+        <span>Agrega productos para preparar tu pedido.</span>
+      </div>
+
+      <div class="cart-footer">
+        <div class="total-row">
+          <span>Total</span>
+          <strong id="cartTotal">$0</strong>
+        </div>
+        <button class="checkout-button" type="button" id="checkoutButton">
+          <img src="./assets/whatsapp-icon.svg" alt="" aria-hidden="true" />
+          Pedir por WhatsApp
+        </button>
+      </div>
+    </aside>
+
+    <div class="overlay" id="overlay" hidden></div>
+
+    <footer class="footer" id="contacto">
+      <div class="footer-heading">
+        <span>Nexum</span>
+        <strong>Contacto</strong>
+      </div>
+      <div class="contact-menu">
+        <a
+          class="contact-card"
+          href="https://wa.me/5493364566962"
+          target="_blank"
+          rel="noopener"
+        >
+          <img class="contact-icon" src="./assets/whatsapp-icon.svg" alt="" aria-hidden="true" />
+          <span class="contact-label">WhatsApp</span>
+          <span class="contact-value">5493364566962</span>
+        </a>
+        <a
+          class="contact-card"
+          href="https://www.instagram.com/nexum_sn/?hl=es"
+          target="_blank"
+          rel="noopener"
+        >
+          <img class="contact-icon" src="./assets/instagram-icon.svg" alt="" aria-hidden="true" />
+          <span class="contact-label">Instagram</span>
+          <span class="contact-value">@nexum_sn</span>
+        </a>
+      </div>
+    </footer>
+
+    <script src="./script.js"></script>
+  </body>
 </html>
