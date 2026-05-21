@@ -65,6 +65,7 @@ const adminLoginForm = document.querySelector("#adminLoginForm");
 const adminPassword = document.querySelector("#adminPassword");
 const adminLoginMessage = document.querySelector("#adminLoginMessage");
 const adminPanel = document.querySelector("#adminPanel");
+console.log(adminPanel);
 const adminForm = document.querySelector("#adminForm");
 const adminProductId = document.querySelector("#adminProductId");
 const adminName = document.querySelector("#adminName");
