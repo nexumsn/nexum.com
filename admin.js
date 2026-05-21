@@ -263,13 +263,13 @@ if (localStorage.getItem("nexum-admin") === "true") {
 
   adminLogin.classList.add("is-hidden");
 
-  adminPanel.style.display = "none";
+  adminPanel.style.display = "block";
 
   renderAdminProducts();
 
 } else {
 
-  adminPanel.hidden = true;
+  adminPanel.style.display = "none";
 
   adminLogin.classList.remove("is-hidden");
 
