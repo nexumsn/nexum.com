@@ -223,9 +223,13 @@ function updateAdminPrice(productId, price) {
 }
 
 function unlockAdmin() {
-  localStorage.removeItem("nexum-admin");
+
+  localStorage.setItem("nexum-admin", "true");
+
   adminLogin.classList.add("is-hidden");
+
   adminPanel.hidden = false;
+
   renderAdminProducts();
 }
 
@@ -255,7 +259,20 @@ adminProducts.addEventListener("change", (event) => {
   updateAdminPrice(Number(productId), Number(event.target.value));
 });
 
-localStorage.removeItem("nexum-admin");
-adminPanel.hidden = true;
-adminLogin.classList.remove("is-hidden");
-adminPassword.focus();
+if (localStorage.getItem("nexum-admin") === "true") {
+
+  adminLogin.classList.add("is-hidden");
+
+  adminPanel.hidden = false;
+
+  renderAdminProducts();
+
+} else {
+
+  adminPanel.hidden = true;
+
+  adminLogin.classList.remove("is-hidden");
+
+  adminPassword.focus();
+
+}
