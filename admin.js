@@ -276,3 +276,10 @@ if (localStorage.getItem("nexum-admin") === "true") {
   adminPassword.focus();
 
 }
+document.querySelector("#logoutAdmin").addEventListener("click", () => {
+
+  localStorage.removeItem("nexum-admin");
+
+  location.reload();
+
+});
