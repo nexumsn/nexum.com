@@ -58,6 +58,7 @@ const defaultCategories = [
   "adaptadores",
 ];
 let products = loadProducts();
+let categories = loadCategories();
 
 const adminLogin = document.querySelector("#adminLogin");
 const adminLoginForm = document.querySelector("#adminLoginForm");
@@ -68,6 +69,12 @@ const adminForm = document.querySelector("#adminForm");
 const adminProductId = document.querySelector("#adminProductId");
 const adminName = document.querySelector("#adminName");
 const adminCategory = document.querySelector("#adminCategory");
+const newCategory = document.querySelector("#newCategory");
+
+const addCategoryButton = document.querySelector("#addCategoryButton");
+const newCategory = document.querySelector("#newCategory");
+
+const addCategoryButton = document.querySelector("#addCategoryButton");
 const adminPrice = document.querySelector("#adminPrice");
 const adminStock = document.querySelector("#adminStock");
 const adminDescription = document.querySelector("#adminDescription");
@@ -95,9 +102,39 @@ function loadProducts() {
     return [...defaultProducts];
   }
 }
+function loadCategories() {
+
+  const savedCategories = localStorage.getItem(CATEGORY_STORAGE_KEY);
+
+  if (!savedCategories) return [...defaultCategories];
+
+  try {
+
+    return JSON.parse(savedCategories);
+
+  } catch {
+
+    return [...defaultCategories];
+
+  }
+}
 
 function saveProducts() {
   localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(products));
+}
+function saveCategories() {
+
+  localStorage.setItem(
+    CATEGORY_STORAGE_KEY,
+    JSON.stringify(categories)
+  );
+}
+function saveCategories() {
+
+  localStorage.setItem(
+    CATEGORY_STORAGE_KEY,
+    JSON.stringify(categories)
+  );
 }
 
 function parseAdminColors(value) {
@@ -227,6 +264,84 @@ function updateAdminPrice(productId, price) {
   saveProducts();
   renderAdminProducts();
 }
+function renderCategories() {
+
+  adminCategory.innerHTML = categories
+    .map(
+      (category) =>
+        `<option value="${category}">
+          ${category}
+        </option>`
+    )
+    .join("");
+}
+function addCategory() {
+
+  const value = newCategory.value.trim();
+
+  if (!value) return;
+
+  if (categories.includes(value)) return;
+
+  categories.push(value);
+
+  saveCategories();
+
+  renderCategories();
+
+  newCategory.value = "";
+}
+
+function renderCategories() {
+
+  adminCategory.innerHTML = categories
+    .map(
+      (category) =>
+        `<option value="${category}">
+          ${category}
+        </option>`
+    )
+    .join("");
+}
+
+function updateAdminPrice(productId, price) {
+
+  products = products.map((product) =>
+    product.id === productId ? { ...product, price } : product,
+  );
+
+  saveProducts();
+
+  renderAdminProducts();
+}
+
+function renderCategories() {
+
+  adminCategory.innerHTML = categories
+    .map(
+      (category) =>
+        `<option value="${category}">
+          ${category}
+        </option>`
+    )
+    .join("");
+}
+function addCategory() {
+
+  const value = newCategory.value.trim();
+
+  if (!value) return;
+
+  if (categories.includes(value)) return;
+
+  categories.push(value);
+
+  saveCategories();
+
+  renderCategories();
+
+  newCategory.value = "";
+}
 
 function unlockAdmin() {
 
@@ -235,7 +350,8 @@ function unlockAdmin() {
   adminLogin.classList.add("is-hidden");
 
   adminPanel.style.display = "block";
-
+  renderCategories();
+  renderCategories();
   renderAdminProducts();
 }
 
@@ -251,6 +367,7 @@ adminLoginForm.addEventListener("submit", (event) => {
 
 adminForm.addEventListener("submit", saveAdminProduct);
 adminClear.addEventListener("click", resetAdminForm);
+addCategoryButton.addEventListener("click", addCategory);
 adminProducts.addEventListener("click", (event) => {
   const editId = event.target.closest("[data-admin-edit]")?.dataset.adminEdit;
   const deleteId = event.target.closest("[data-admin-delete]")?.dataset.adminDelete;
