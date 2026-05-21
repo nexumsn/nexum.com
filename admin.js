@@ -51,7 +51,12 @@ const defaultProducts = [
     image: "./assets/cable-v8-micro-usb.png",
   },
 ];
-
+const defaultCategories = [
+  "parlantes",
+  "smartwatch",
+  "cables",
+  "adaptadores",
+];
 let products = loadProducts();
 
 const adminLogin = document.querySelector("#adminLogin");
