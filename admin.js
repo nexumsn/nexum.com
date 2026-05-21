@@ -228,7 +228,7 @@ function unlockAdmin() {
 
   adminLogin.classList.add("is-hidden");
 
-  adminPanel.hidden = false;
+  adminPanel.style.display = "block";
 
   renderAdminProducts();
 }
@@ -263,7 +263,7 @@ if (localStorage.getItem("nexum-admin") === "true") {
 
   adminLogin.classList.add("is-hidden");
 
-  adminPanel.hidden = false;
+  adminPanel.style.display = "none";
 
   renderAdminProducts();
 
