@@ -347,11 +347,14 @@ function unlockAdmin() {
 
   localStorage.setItem("nexum-admin", "true");
 
-  adminLogin.classList.add("is-hidden");
+  adminLogin.style.display = "none";
 
   adminPanel.style.display = "block";
+
+  adminPanel.style.pointerEvents = "auto";
+
   renderCategories();
-  renderCategories();
+
   renderAdminProducts();
 }
 
@@ -384,9 +387,13 @@ adminProducts.addEventListener("change", (event) => {
 
 if (localStorage.getItem("nexum-admin") === "true") {
 
-  adminLogin.classList.add("is-hidden");
+  adminLogin.style.display = "none";
 
   adminPanel.style.display = "block";
+
+  adminPanel.style.pointerEvents = "auto";
+
+  renderCategories();
 
   renderAdminProducts();
 
@@ -394,11 +401,14 @@ if (localStorage.getItem("nexum-admin") === "true") {
 
   adminPanel.style.display = "none";
 
-  adminLogin.classList.remove("is-hidden");
+  adminPanel.style.pointerEvents = "none";
+
+  adminLogin.style.display = "flex";
 
   adminPassword.focus();
 
 }
+
 document.querySelector("#logoutAdmin").addEventListener("click", () => {
 
   localStorage.removeItem("nexum-admin");
