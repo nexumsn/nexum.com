@@ -1,5 +1,6 @@
 const PRODUCTS_STORAGE_KEY = "nexum-products";
 const ADMIN_PASSWORD = "nexum2026";
+const CATEGORY_STORAGE_KEY = "nexum-categories";
 
 const defaultProducts = [
   {
