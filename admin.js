@@ -350,11 +350,7 @@ function unlockAdmin() {
 
   adminLogin.style.display = "none";
 
-  adminPanel.style.display = "block";
-
-  adminPanel.style.pointerEvents = "auto";
-
-  renderCategories();
+  adminPanel.style.display = "grid";
 
   renderAdminProducts();
 }
@@ -390,11 +386,7 @@ if (localStorage.getItem("nexum-admin") === "true") {
 
   adminLogin.style.display = "none";
 
-  adminPanel.style.display = "block";
-
-  adminPanel.style.pointerEvents = "auto";
-
-  renderCategories();
+  adminPanel.style.display = "grid";
 
   renderAdminProducts();
 
@@ -402,18 +394,10 @@ if (localStorage.getItem("nexum-admin") === "true") {
 
   adminPanel.style.display = "none";
 
-  adminPanel.style.pointerEvents = "none";
-
   adminLogin.style.display = "flex";
 
   adminPassword.focus();
 
 }
-
-document.querySelector("#logoutAdmin").addEventListener("click", () => {
-
-  localStorage.removeItem("nexum-admin");
-
-  location.reload();
 
 });
