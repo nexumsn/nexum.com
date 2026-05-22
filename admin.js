@@ -196,7 +196,6 @@ function renderCategories() {
     .join("");
 }
 
-// --- Acciones de Producto y Categoría ---
 function fillAdminForm(productId) {
   const product = products.find((entry) => entry.id === productId);
   if (!product) return;
@@ -215,6 +214,16 @@ function fillAdminForm(productId) {
 async function saveAdminProduct(event) {
   event.preventDefault();
 
+  const categoryValue = adminCategory.value.trim().toLowerCase();
+  
+  
+  const categories = loadCategories(); 
+  if (!categories.find(c => c.id === categoryValue)) {
+    const savedCategories = JSON.parse(localStorage.getItem(CATEGORY_STORAGE_KEY) || "[]");
+    savedCategories.push(categoryValue);
+    localStorage.setItem(CATEGORY_STORAGE_KEY, JSON.stringify(savedCategories));
+  }
+
   const productId = Number(adminProductId.value);
   const currentProduct = products.find((entry) => entry.id === productId);
   const imageFile = adminImage.files[0];
@@ -227,7 +236,7 @@ async function saveAdminProduct(event) {
   const product = {
     id: productId || Math.max(0, ...products.map((entry) => entry.id), 0) + 1,
     name: adminName.value.trim(),
-    category: adminCategory.value,
+    category: categoryValue,
     price: Number(adminPrice.value),
     stock: Number(adminStock.value),
     description: adminDescription.value.trim(),
@@ -244,7 +253,7 @@ async function saveAdminProduct(event) {
 
   saveProducts();
   resetAdminForm();
-  renderAdminProducts();
+  refreshCatalog();
 }
 
 function deleteAdminProduct(productId) {
