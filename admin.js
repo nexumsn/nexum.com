@@ -293,18 +293,6 @@ function addCategory() {
   newCategory.value = "";
 }
 
-function renderCategories() {
-
-  adminCategory.innerHTML = categories
-    .map(
-      (category) =>
-        `<option value="${category}">
-          ${category}
-        </option>`
-    )
-    .join("");
-}
-
 function updateAdminPrice(productId, price) {
 
   products = products.map((product) =>
@@ -316,33 +304,6 @@ function updateAdminPrice(productId, price) {
   renderAdminProducts();
 }
 
-function renderCategories() {
-
-  adminCategory.innerHTML = categories
-    .map(
-      (category) =>
-        `<option value="${category}">
-          ${category}
-        </option>`
-    )
-    .join("");
-}
-function addCategory() {
-
-  const value = newCategory.value.trim();
-
-  if (!value) return;
-
-  if (categories.includes(value)) return;
-
-  categories.push(value);
-
-  saveCategories();
-
-  renderCategories();
-
-  newCategory.value = "";
-}
 
 function unlockAdmin() {
 
