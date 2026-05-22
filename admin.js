@@ -15,17 +15,15 @@ const defaultProducts = [
 
 let products = JSON.parse(localStorage.getItem(PRODUCTS_STORAGE_KEY)) || [...defaultProducts];
 let categories = JSON.parse(localStorage.getItem(CATEGORY_STORAGE_KEY)) || ["parlantes", "smartwatch", "cables", "adaptadores"];
-let cart = new Map();
 let selectedCategory = null;
-let currentSlide = 0;
 
-// --- FUNCIONES CORE ---
+// --- FUNCIONES PROTEGIDAS ---
 function loadProducts() { return JSON.parse(localStorage.getItem(PRODUCTS_STORAGE_KEY)) || [...defaultProducts]; }
 
 function refreshCatalog() {
     products = loadProducts();
     const grid = document.querySelector("#productsGrid");
-    if (!grid) return;
+    if (!grid) return; // Si no hay grilla, salimos sin error
     
     if (selectedCategory) renderProducts(selectedCategory);
     else renderCategories();
@@ -33,7 +31,8 @@ function refreshCatalog() {
 
 function renderCategories() {
     const grid = document.querySelector("#productsGrid");
-    if (!grid) return;
+    if (!grid) return; // Protección
+    
     grid.className = "categories-grid";
     grid.innerHTML = categories.map(cat => `
         <button class="category-card" data-category="${cat}">
@@ -44,7 +43,8 @@ function renderCategories() {
 
 function renderProducts(cat) {
     const grid = document.querySelector("#productsGrid");
-    if (!grid) return;
+    if (!grid) return; // Protección
+    
     const filtered = products.filter(p => p.category === cat);
     grid.className = "products-grid";
     grid.innerHTML = `<button data-back>Volver</button>` + filtered.map(p => `
@@ -56,6 +56,7 @@ function renderProducts(cat) {
 async function saveAdminProduct(e) {
     e.preventDefault();
     const form = e.target;
+    // Usamos ?. para evitar errores si el campo no existe en el form
     const cat = form.querySelector("#adminCategory")?.value.toLowerCase();
     
     if (cat && !categories.includes(cat)) {
@@ -74,28 +75,33 @@ async function saveAdminProduct(e) {
 
     products.push(newProduct);
     localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(products));
-    alert("Guardado!");
+    alert("¡Guardado correctamente!");
     form.reset();
     refreshCatalog();
 }
 
 // --- ARRANQUE SEGURO ---
 document.addEventListener("DOMContentLoaded", () => {
-    // Login
+    // 1. Lógica de Login: solo se ejecuta si existe el form en el HTML actual
     const loginForm = document.querySelector("#adminLoginForm");
-    loginForm?.addEventListener("submit", (e) => {
-        e.preventDefault();
-        if (document.querySelector("#adminPassword")?.value === ADMIN_PASSWORD) {
-            localStorage.setItem(ADMIN_SESSION_KEY, "true");
-            location.reload();
-        } else { alert("Clave mal"); }
-    });
+    if (loginForm) {
+        loginForm.addEventListener("submit", (e) => {
+            e.preventDefault();
+            const pass = document.querySelector("#adminPassword")?.value;
+            if (pass === ADMIN_PASSWORD) {
+                localStorage.setItem(ADMIN_SESSION_KEY, "true");
+                location.reload();
+            } else { alert("Clave incorrecta"); }
+        });
+    }
 
-    // Guardado
+    // 2. Lógica de Guardado: solo si existe adminForm
     const adminForm = document.querySelector("#adminForm");
-    adminForm?.addEventListener("submit", saveAdminProduct);
+    if (adminForm) {
+        adminForm.addEventListener("submit", saveAdminProduct);
+    }
 
-    // Navegación
+    // 3. Navegación: delegada al document para que siempre funcione
     document.addEventListener("click", (e) => {
         const catBtn = e.target.closest("[data-category]");
         if (catBtn) {
@@ -108,5 +114,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
+    // 4. Carga inicial
     refreshCatalog();
 });
