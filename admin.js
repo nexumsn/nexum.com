@@ -65,16 +65,13 @@ const adminLoginForm = document.querySelector("#adminLoginForm");
 const adminPassword = document.querySelector("#adminPassword");
 const adminLoginMessage = document.querySelector("#adminLoginMessage");
 const adminPanel = document.querySelector("#adminPanel");
-console.log(adminPanel);
 const adminForm = document.querySelector("#adminForm");
 const adminProductId = document.querySelector("#adminProductId");
 const adminName = document.querySelector("#adminName");
 const adminCategory = document.querySelector("#adminCategory");
 const newCategory = document.querySelector("#newCategory");
-
 const addCategoryButton = document.querySelector("#addCategoryButton");
 const newCategory = document.querySelector("#newCategory");
-
 const addCategoryButton = document.querySelector("#addCategoryButton");
 const adminPrice = document.querySelector("#adminPrice");
 const adminStock = document.querySelector("#adminStock");
@@ -83,7 +80,6 @@ const adminColors = document.querySelector("#adminColors");
 const adminImage = document.querySelector("#adminImage");
 const adminClear = document.querySelector("#adminClear");
 const adminProducts = document.querySelector("#adminProducts");
-
 const money = new Intl.NumberFormat("es-AR", {
   style: "currency",
   currency: "ARS",
