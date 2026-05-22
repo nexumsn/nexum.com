@@ -1,5 +1,3 @@
-document.addEventListener('DOMContentLoaded', () => {
-
 const PRODUCTS_STORAGE_KEY = "nexum-products";
 const ADMIN_PASSWORD = "nexum2026";
 const CATEGORY_STORAGE_KEY = "nexum-categories";
@@ -125,10 +123,14 @@ function saveCategories() {
 
 // --- Helpers de Colores e Imágenes ---
 function parseAdminColors(value) {
+  if (!value) return [];
   return value
     .split(",")
     .map((entry) => {
-      const [name, colorValue] = entry.split(":").map((part) => part.trim());
+      const parts = entry.split(":");
+      if (parts.length < 2) return null;
+      const name = parts[0].trim();
+      const colorValue = parts[1].trim();
       if (!name) return null;
       return {
         name,
@@ -152,12 +154,13 @@ function readImageFile(file) {
 }
 
 function resetAdminForm() {
-  adminForm.reset();
-  adminProductId.value = "";
+  if (adminForm) adminForm.reset();
+  if (adminProductId) adminProductId.value = "";
 }
 
 // --- Renders de la interfaz ---
 function renderAdminProducts() {
+  if (!adminProducts) return;
   adminProducts.innerHTML = products
     .map(
       (product) => `
@@ -181,16 +184,15 @@ function renderAdminProducts() {
             </div>
           </div>
         </article>
-      `,
+      `
     )
     .join("");
 }
 
 function renderCategories() {
+  if (!adminCategory) return;
   adminCategory.innerHTML = categories
-    .map(
-      (category) => `<option value="${category}">${category}</option>`
-    )
+    .map((category) => `<option value="${category}">${category}</option>`)
     .join("");
 }
 
@@ -223,7 +225,7 @@ async function saveAdminProduct(event) {
     : currentProduct?.image || "./assets/favicon.png";
 
   const product = {
-    id: productId || Math.max(0, ...products.map((entry) => entry.id)) + 1,
+    id: productId || Math.max(0, ...products.map((entry) => entry.id), 0) + 1,
     name: adminName.value.trim(),
     category: adminCategory.value,
     price: Number(adminPrice.value),
@@ -257,13 +259,14 @@ function deleteAdminProduct(productId) {
 
 function updateAdminPrice(productId, price) {
   products = products.map((product) =>
-    product.id === productId ? { ...product, price } : product,
+    product.id === productId ? { ...product, price } : product
   );
   saveProducts();
   renderAdminProducts();
 }
 
 function addCategory() {
+  if (!newCategory) return;
   const value = newCategory.value.trim().toLowerCase();
   if (!value) return;
   if (categories.includes(value)) return;
@@ -277,51 +280,57 @@ function addCategory() {
 // --- Autenticación ---
 function unlockAdmin() {
   localStorage.setItem("nexum-admin", "true");
-  adminLogin.style.display = "none";
-  adminPanel.style.display = "grid";
+  if (adminLogin) adminLogin.style.display = "none";
+  if (adminPanel) adminPanel.style.display = "grid"; 
   renderAdminProducts();
   renderCategories();
 }
 
 function lockAdmin() {
   localStorage.removeItem("nexum-admin");
-  adminPanel.style.display = "none";
-  adminLogin.style.display = "flex";
-  adminPassword.value = "";
-  adminPassword.focus();
+  if (adminPanel) adminPanel.style.display = "none";
+  if (adminLogin) adminLogin.style.display = "flex";
+  if (adminPassword) {
+    adminPassword.value = "";
+    adminPassword.focus();
+  }
 }
 
 // --- Event Listeners ---
-adminLoginForm.addEventListener("submit", (event) => {
-  event.preventDefault();
-  if (adminPassword.value === ADMIN_PASSWORD) {
-    unlockAdmin();
-  } else {
-    adminLoginMessage.textContent = "Clave incorrecta.";
-  }
-});
+if (adminLoginForm) {
+  adminLoginForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    if (adminPassword.value === ADMIN_PASSWORD) {
+      unlockAdmin();
+    } else {
+      if (adminLoginMessage) adminLoginMessage.textContent = "Clave incorrecta.";
+    }
+  });
+}
 
 if (logoutAdmin) {
   logoutAdmin.addEventListener("click", lockAdmin);
 }
 
-adminForm.addEventListener("submit", saveAdminProduct);
-adminClear.addEventListener("click", resetAdminForm);
-addCategoryButton.addEventListener("click", addCategory);
+if (adminForm) adminForm.addEventListener("submit", saveAdminProduct);
+if (adminClear) adminClear.addEventListener("click", resetAdminForm);
+if (addCategoryButton) addCategoryButton.addEventListener("click", addCategory);
 
-adminProducts.addEventListener("click", (event) => {
-  const editId = event.target.closest("[data-admin-edit]")?.dataset.adminEdit;
-  const deleteId = event.target.closest("[data-admin-delete]")?.dataset.adminDelete;
+if (adminProducts) {
+  adminProducts.addEventListener("click", (event) => {
+    const editId = event.target.closest("[data-admin-edit]")?.dataset.adminEdit;
+    const deleteId = event.target.closest("[data-admin-delete]")?.dataset.adminDelete;
 
-  if (editId) fillAdminForm(Number(editId));
-  if (deleteId) deleteAdminProduct(Number(deleteId));
-});
+    if (editId) fillAdminForm(Number(editId));
+    if (deleteId) deleteAdminProduct(Number(deleteId));
+  });
 
-adminProducts.addEventListener("change", (event) => {
-  const productId = event.target.dataset.adminPrice;
-  if (!productId) return;
-  updateAdminPrice(Number(productId), Number(event.target.value));
-});
+  adminProducts.addEventListener("change", (event) => {
+    const productId = event.target.dataset.adminPrice;
+    if (!productId) return;
+    updateAdminPrice(Number(productId), Number(event.target.value));
+  });
+}
 
 // --- Estado de sesión Inicial ---
 if (localStorage.getItem("nexum-admin") === "true") {
