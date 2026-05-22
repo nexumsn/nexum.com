@@ -1,5 +1,6 @@
 const WHATSAPP_NUMBER = "5493364566962";
 const PRODUCTS_STORAGE_KEY = "nexum-products";
+const CATEGORY_STORAGE_KEY = "nexum-categories";
 const ADMIN_SESSION_KEY = "nexum-admin";
 const ADMIN_PASSWORD = "nexum2026";
 
@@ -53,6 +54,13 @@ const defaultProducts = [
   },
 ];
 
+const defaultCategoriesStrings = [
+  "parlantes",
+  "smartwatch",
+  "cables",
+  "adaptadores",
+];
+
 function loadProducts() {
   const savedProducts = localStorage.getItem(PRODUCTS_STORAGE_KEY);
   if (!savedProducts) return [...defaultProducts];
@@ -69,28 +77,32 @@ function loadProducts() {
 
 let products = loadProducts();
 
-const categories = [
-  {
-    id: "parlantes",
-    name: "Parlantes",
-    image: "./assets/parlante-gts-1867.png",
-  },
-  {
-    id: "smartwatch",
-    name: "Smartwatch",
-    image: "./assets/smartwatch-d20.png",
-  },
-  {
-    id: "cables",
-    name: "Cables",
-    image: "./assets/cable-lightning.png",
-  },
-  {
-    id: "adaptadores",
-    name: "Adaptadores",
-    image: "./assets/adaptador-hub-usb.png",
-  },
-];
+// --- LÓGICA DINÁMICA DE CATEGORÍAS ---
+function loadCategories() {
+  const savedCategories = localStorage.getItem(CATEGORY_STORAGE_KEY);
+  let parsedCategories = [...defaultCategoriesStrings];
+
+  if (savedCategories) {
+    try {
+      parsedCategories = JSON.parse(savedCategories);
+    } catch {
+      parsedCategories = [...defaultCategoriesStrings];
+    }
+  }
+
+  // Convertimos el texto simple de la categoría en un objeto con nombre capitalizado e imagen
+  return parsedCategories.map((catId) => {
+    const productRef = products.find((p) => p.category === catId);
+    return {
+      id: catId,
+      name: catId.charAt(0).toUpperCase() + catId.slice(1), 
+      image: productRef ? productRef.image : "./assets/favicon.png",
+    };
+  });
+}
+
+let categories = loadCategories();
+// ------------------------------------
 
 const cart = new Map();
 
@@ -405,6 +417,9 @@ function saveProducts() {
 }
 
 function refreshCatalog() {
+  // Refrescamos categorías también por si agregamos una nueva
+  categories = loadCategories();
+  
   if (selectedCategory) {
     renderProducts(selectedCategory);
   } else {
@@ -504,7 +519,7 @@ async function saveAdminProduct(event) {
     ? await readImageFile(imageFile)
     : currentProduct?.image || "./assets/favicon.png";
   const product = {
-    id: productId || Math.max(0, ...products.map((entry) => entry.id)) + 1,
+    id: productId || Math.max(0, ...products.map((entry) => entry.id), 0) + 1,
     name: adminName.value.trim(),
     category: adminCategory.value,
     price: Number(adminPrice.value),
@@ -635,8 +650,8 @@ if (adminOpen && adminClose && adminClear && adminForm && adminLoginForm && admi
     updateAdminPrice(Number(productId), Number(event.target.value));
   });
 }
-overlay.addEventListener("click", closeCart);
-checkoutButton.addEventListener("click", checkout);
+if (overlay) overlay.addEventListener("click", closeCart);
+if (checkoutButton) checkoutButton.addEventListener("click", checkout);
 document.querySelector("#carouselPrev")?.addEventListener("click", () => {
   showSlide(currentSlide - 1);
   startCarousel();
