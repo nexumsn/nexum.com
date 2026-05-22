@@ -126,13 +126,6 @@ function saveCategories() {
     JSON.stringify(categories)
   );
 }
-function saveCategories() {
-
-  localStorage.setItem(
-    CATEGORY_STORAGE_KEY,
-    JSON.stringify(categories)
-  );
-}
 
 function parseAdminColors(value) {
   return value
