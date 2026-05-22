@@ -329,7 +329,3 @@ if (localStorage.getItem("nexum-admin") === "true") {
 } else {
   lockAdmin();
 }
-
-});
-
-});
