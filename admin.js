@@ -17,6 +17,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const adminCategorySelect = document.querySelector("#adminCategory");
     const newCategoryInput = document.querySelector("#newCategory");
     const addCategoryBtn = document.querySelector("#addCategoryButton");
+    const categoryAddContainer = document.querySelector(".admin-category-add"); // Seleccionamos el div específico
     const logoutBtn = document.querySelector("#logoutAdmin");
     const adminProductsContainer = document.querySelector("#adminProducts");
 
@@ -37,6 +38,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (isLogged) {
             updateCategorySelect();
             renderAdminProducts();
+            crearBotonBorrarCategoria();
         }
     }
 
@@ -48,45 +50,66 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!Array.isArray(categories)) categories = ["parlantes", "smartwatch", "cables", "adaptadores"];
             
             const safeCategories = categories.filter(cat => cat && typeof cat === 'string');
+            const valorActual = adminCategorySelect.value;
             
             adminCategorySelect.innerHTML = safeCategories.map(cat => 
                 `<option value="${cat}">${cat.charAt(0).toUpperCase() + cat.slice(1)}</option>`
             ).join("");
+
+            if (safeCategories.includes(valorActual)) {
+                adminCategorySelect.value = valorActual;
+            }
         } catch (e) {
             console.error("Error cargando categorías:", e);
         }
     }
 
-    // Crear botón rojo de Borrar Categoría al lado de "Agregar"
-    if (addCategoryBtn && !document.querySelector("#deleteCatBtn")) {
+    // --- EL BOTÓN DE BORRAR CATEGORÍA (Integrado al HTML correctamente) ---
+    function crearBotonBorrarCategoria() {
+        // Si no existe el div contenedor o ya creamos el botón, cancelamos
+        if (!categoryAddContainer || document.querySelector("#deleteCatBtn")) return;
+
         const deleteCatBtn = document.createElement("button");
         deleteCatBtn.id = "deleteCatBtn";
         deleteCatBtn.type = "button";
-        deleteCatBtn.textContent = "Borrar categoría actual";
-        deleteCatBtn.style.cssText = "background: #dc3545; color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: bold; margin-left: 10px;";
+        deleteCatBtn.textContent = "Borrar seleccionada";
         
-        // Lo inyectamos justo después del botón de agregar
-        addCategoryBtn.insertAdjacentElement("afterend", deleteCatBtn);
+        // Estilo Minimal & Tech para Nexum
+        deleteCatBtn.style.cssText = `
+            background-color: #ef4444; 
+            color: #ffffff; 
+            border: none; 
+            padding: 8px 12px; 
+            font-size: 13px; 
+            font-weight: 600; 
+            cursor: pointer; 
+            border-radius: 4px; 
+            margin-top: 8px;
+            width: 100%;
+            transition: background-color 0.2s;
+        `;
+        
+        // Lo agregamos adentro del div .admin-category-add, abajo del botón de agregar
+        categoryAddContainer.appendChild(deleteCatBtn);
 
         deleteCatBtn.addEventListener("click", () => {
             const catToDelete = adminCategorySelect.value;
             if (!catToDelete) return;
 
-            // Seguridad: Chequear si hay productos usando esta categoría
             let currentProducts = JSON.parse(localStorage.getItem(PRODUCTS_STORAGE_KEY)) || [];
             const isUsed = currentProducts.some(p => p.category === catToDelete);
 
             if (isUsed) {
-                alert(`⚠️ No podés borrar "${catToDelete.toUpperCase()}" porque hay productos usándola. Cambiale la categoría a esos productos o borralos primero.`);
+                alert(`⚠️ Atención: No podés borrar la categoría "${catToDelete.toUpperCase()}" porque hay productos activos usándola. Cambiale la categoría a esos productos primero.`);
                 return;
             }
 
-            if (confirm(`¿Seguro que querés eliminar la categoría "${catToDelete.toUpperCase()}" de tu lista?`)) {
+            if (confirm(`¿Confirmás que querés eliminar la categoría "${catToDelete.toUpperCase()}" definitivamente?`)) {
                 let currentCategories = JSON.parse(localStorage.getItem(CATEGORY_STORAGE_KEY)) || [];
                 currentCategories = currentCategories.filter(c => c !== catToDelete);
                 localStorage.setItem(CATEGORY_STORAGE_KEY, JSON.stringify(currentCategories));
                 updateCategorySelect();
-                alert("Categoría eliminada.");
+                alert("Categoría eliminada del sistema.");
             }
         });
     }
@@ -117,8 +140,8 @@ document.addEventListener("DOMContentLoaded", () => {
             if (safeProducts.length === 0) {
                 adminProductsContainer.innerHTML = `
                     <div style="margin-top: 40px; padding: 20px; background: #f8f9fa; border: 1px dashed #ccc; border-radius: 8px; text-align: center;">
-                        <h3 style="margin-bottom: 10px; color: #333;">No hay productos</h3>
-                        <p style="color: #666; margin: 0;">Los productos que agregues aparecerán aquí.</p>
+                        <h3 style="margin-bottom: 10px; color: #333;">Inventario vacío</h3>
+                        <p style="color: #666; margin: 0;">Los productos ingresados aparecerán aquí.</p>
                     </div>`;
                 return;
             }
@@ -140,8 +163,8 @@ document.addEventListener("DOMContentLoaded", () => {
                                     </div>
                                 </div>
                                 <div style="display: flex; gap: 8px; border-top: 1px solid #f1f5f9; padding-top: 12px;">
-                                    <button type="button" class="action-edit-btn" data-id="${p.id}" style="flex: 1; background: #0f172a; color: white; border: none; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; transition: background 0.2s;">Editar</button>
-                                    <button type="button" class="action-delete-btn" data-id="${p.id}" style="flex: 1; background: #ef4444; color: white; border: none; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; transition: background 0.2s;">Borrar</button>
+                                    <button type="button" class="action-edit-btn" data-id="${p.id}" style="flex: 1; background: #0f172a; color: white; border: none; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">Editar</button>
+                                    <button type="button" class="action-delete-btn" data-id="${p.id}" style="flex: 1; background: #ef4444; color: white; border: none; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">Borrar</button>
                                 </div>
                             </div>
                         `).join("")}
@@ -154,7 +177,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // --- 4. EVENTOS DE ACCIÓN (EDITAR Y BORRAR) ---
+    // --- 4. EVENTOS DE ACCIÓN (EDITAR Y BORRAR PRODUCTOS) ---
     adminProductsContainer?.addEventListener("click", (e) => {
         const id = Number(e.target.dataset.id);
         if (!id) return;
@@ -162,7 +185,7 @@ document.addEventListener("DOMContentLoaded", () => {
         let products = JSON.parse(localStorage.getItem(PRODUCTS_STORAGE_KEY)) || [];
 
         if (e.target.classList.contains("action-delete-btn")) {
-            if (confirm(`¿Seguro que querés eliminar este producto?`)) {
+            if (confirm(`¿Confirmás la eliminación de este producto?`)) {
                 products = products.filter(p => p.id !== id);
                 localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(products));
                 renderAdminProducts();
