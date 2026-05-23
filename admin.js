@@ -40,7 +40,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // --- 2. LÓGICA DE CATEGORÍAS (Con Borrado Seguro) ---
+    // --- 2. LÓGICA DE CATEGORÍAS ---
     function updateCategorySelect() {
         if (!adminCategorySelect) return;
         try {
@@ -52,43 +52,43 @@ document.addEventListener("DOMContentLoaded", () => {
             adminCategorySelect.innerHTML = safeCategories.map(cat => 
                 `<option value="${cat}">${cat.charAt(0).toUpperCase() + cat.slice(1)}</option>`
             ).join("");
-
-            // Crear botón de borrar categoría si no existe en el HTML
-            let deleteCatBtn = document.querySelector("#deleteCatBtn");
-            if (!deleteCatBtn) {
-                deleteCatBtn = document.createElement("button");
-                deleteCatBtn.id = "deleteCatBtn";
-                deleteCatBtn.type = "button";
-                deleteCatBtn.textContent = "Borrar esta categoría";
-                deleteCatBtn.style.cssText = "background: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; margin-top: 10px; display: block; font-weight: bold;";
-                
-                adminCategorySelect.insertAdjacentElement("afterend", deleteCatBtn);
-
-                deleteCatBtn.addEventListener("click", () => {
-                    const catToDelete = adminCategorySelect.value;
-                    if (!catToDelete) return;
-
-                    // Validación de seguridad
-                    let currentProducts = JSON.parse(localStorage.getItem(PRODUCTS_STORAGE_KEY)) || [];
-                    const isUsed = currentProducts.some(p => p.category === catToDelete);
-
-                    if (isUsed) {
-                        alert(`⚠️ No podés borrar "${catToDelete.toUpperCase()}" porque hay productos usándola. Cambiale la categoría a esos productos o borralos primero.`);
-                        return;
-                    }
-
-                    if (confirm(`¿Seguro que querés eliminar la categoría "${catToDelete.toUpperCase()}"?`)) {
-                        let currentCategories = JSON.parse(localStorage.getItem(CATEGORY_STORAGE_KEY)) || [];
-                        currentCategories = currentCategories.filter(c => c !== catToDelete);
-                        localStorage.setItem(CATEGORY_STORAGE_KEY, JSON.stringify(currentCategories));
-                        updateCategorySelect();
-                        alert("Categoría eliminada con éxito.");
-                    }
-                });
-            }
         } catch (e) {
             console.error("Error cargando categorías:", e);
         }
+    }
+
+    // Crear botón rojo de Borrar Categoría al lado de "Agregar"
+    if (addCategoryBtn && !document.querySelector("#deleteCatBtn")) {
+        const deleteCatBtn = document.createElement("button");
+        deleteCatBtn.id = "deleteCatBtn";
+        deleteCatBtn.type = "button";
+        deleteCatBtn.textContent = "Borrar categoría actual";
+        deleteCatBtn.style.cssText = "background: #dc3545; color: white; border: none; padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 13px; font-weight: bold; margin-left: 10px;";
+        
+        // Lo inyectamos justo después del botón de agregar
+        addCategoryBtn.insertAdjacentElement("afterend", deleteCatBtn);
+
+        deleteCatBtn.addEventListener("click", () => {
+            const catToDelete = adminCategorySelect.value;
+            if (!catToDelete) return;
+
+            // Seguridad: Chequear si hay productos usando esta categoría
+            let currentProducts = JSON.parse(localStorage.getItem(PRODUCTS_STORAGE_KEY)) || [];
+            const isUsed = currentProducts.some(p => p.category === catToDelete);
+
+            if (isUsed) {
+                alert(`⚠️ No podés borrar "${catToDelete.toUpperCase()}" porque hay productos usándola. Cambiale la categoría a esos productos o borralos primero.`);
+                return;
+            }
+
+            if (confirm(`¿Seguro que querés eliminar la categoría "${catToDelete.toUpperCase()}" de tu lista?`)) {
+                let currentCategories = JSON.parse(localStorage.getItem(CATEGORY_STORAGE_KEY)) || [];
+                currentCategories = currentCategories.filter(c => c !== catToDelete);
+                localStorage.setItem(CATEGORY_STORAGE_KEY, JSON.stringify(currentCategories));
+                updateCategorySelect();
+                alert("Categoría eliminada.");
+            }
+        });
     }
 
     addCategoryBtn?.addEventListener("click", () => {
@@ -100,7 +100,6 @@ document.addEventListener("DOMContentLoaded", () => {
             localStorage.setItem(CATEGORY_STORAGE_KEY, JSON.stringify(categories));
             updateCategorySelect();
             newCategoryInput.value = "";
-            alert("Categoría agregada");
         }
     });
 
@@ -151,7 +150,7 @@ document.addEventListener("DOMContentLoaded", () => {
             `;
         } catch (e) {
             console.error("Error renderizando productos:", e);
-            adminProductsContainer.innerHTML = "<p style='color:red;'>Error al cargar los productos. Revisá la consola.</p>";
+            adminProductsContainer.innerHTML = "<p style='color:red;'>Error al cargar los productos.</p>";
         }
     }
 
@@ -211,10 +210,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const index = products.findIndex(p => p.id === id);
         if (index !== -1) {
             products[index] = productData;
-            alert("Producto actualizado");
         } else {
             products.push(productData);
-            alert("Producto guardado");
         }
 
         localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(products));
