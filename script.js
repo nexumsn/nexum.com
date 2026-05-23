@@ -226,15 +226,13 @@ function renderProducts(categoryId) {
 
         return `
         <article class="product-card" style="position: relative;">
+          ${isOutOfStock ? `<span style="position: absolute; top: 0; left: 0; background: #0f172a; color: #f87171; padding: 6px 12px; font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; border-bottom-right-radius: 8px; z-index: 10;">Sin Stock</span>` : ""}
           <img class="product-image" src="${product.image}" alt="${product.name}" />
           <div class="product-body">
             <span class="product-category">${getCategoryName(product.category)}</span>
             <h3>${product.name}</h3>
             <p>${product.description}</p>
-            ${product.stock <= 0 
-                ? `<span style="background: #0f172a; color: #f87171; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid #1e293b; display: inline-block; margin-bottom: 10px;">Sin Stock</span>` 
-                : `<span class="stock-label">Stock disponible: ${product.stock}</span>`
-            }
+            <span class="stock-label">Stock disponible: ${product.stock}</span>
             ${
               product.colors
                 ? `<div class="product-colors">
