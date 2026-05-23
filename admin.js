@@ -3,13 +3,10 @@ const ADMIN_SESSION_KEY = "nexum-admin";
 const CATEGORY_STORAGE_KEY = "nexum-categories";
 const PRODUCTS_STORAGE_KEY = "nexum-products";
 
-// --- DATOS INICIALES POR DEFECTO ---
+// --- DATOS INICIALES ---
 const defaultProducts = [
   { id: 1, name: "Smartwatch D 20", category: "smartwatch", price: 9000, stock: 1, description: "Reloj inteligente", image: "./assets/smartwatch-d20.png" },
-  { id: 2, name: "Parlante GTS-1867", category: "parlantes", price: 15000, stock: 1, description: "Parlante portatil", image: "./assets/parlante-gts-1867.png" },
-  { id: 3, name: "Cable Lightning", category: "cables", price: 2900, stock: 1, description: "Cable USB a Lightning", image: "./assets/cable-lightning.png" },
-  { id: 4, name: "Adaptador HUB USB", category: "adaptadores", price: 8200, stock: 3, description: "Hub USB multiple", image: "./assets/adaptador-hub-usb.png" },
-  { id: 5, name: "Cable V8 (micro usb)", category: "cables", price: 1900, stock: 3, description: "Cable micro USB", image: "./assets/cable-v8-micro-usb.png" },
+  { id: 2, name: "Parlante GTS-1867", category: "parlantes", price: 15000, stock: 1, description: "Parlante portatil", image: "./assets/parlante-gts-1867.png" }
 ];
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -23,7 +20,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const logoutBtn = document.querySelector("#logoutAdmin");
     const adminProductsContainer = document.querySelector("#adminProducts");
 
-    // Campos del formulario
     const adminProductId = document.querySelector("#adminProductId");
     const adminName = document.querySelector("#adminName");
     const adminPrice = document.querySelector("#adminPrice");
@@ -37,99 +33,102 @@ document.addEventListener("DOMContentLoaded", () => {
         const isLogged = localStorage.getItem(ADMIN_SESSION_KEY) === "true";
         if (adminLogin) adminLogin.style.display = isLogged ? "none" : "block";
         if (adminPanel) adminPanel.style.display = isLogged ? "block" : "none";
-        if (isLogged) renderAdminProducts();
+        
+        if (isLogged) {
+            updateCategorySelect();
+            renderAdminProducts();
+        }
     }
 
-    checkSession();
-
-    // Login
-    document.querySelector("#adminLoginForm")?.addEventListener("submit", (e) => {
-        e.preventDefault();
-        if (document.querySelector("#adminPassword")?.value === ADMIN_PASSWORD) {
-            localStorage.setItem(ADMIN_SESSION_KEY, "true");
-            checkSession();
-        } else {
-            alert("Clave incorrecta");
-        }
-    });
-
-    // Logout
-    logoutBtn?.addEventListener("click", () => {
-        localStorage.removeItem(ADMIN_SESSION_KEY);
-        location.reload();
-    });
-
-    // --- 2. LÓGICA DE CATEGORÍAS ---
+    // --- 2. LÓGICA DE CATEGORÍAS (A prueba de fallos) ---
     function updateCategorySelect() {
         if (!adminCategorySelect) return;
-        const categories = JSON.parse(localStorage.getItem(CATEGORY_STORAGE_KEY)) || ["parlantes", "smartwatch", "cables", "adaptadores"];
-        adminCategorySelect.innerHTML = categories.map(cat => `<option value="${cat}">${cat.charAt(0).toUpperCase() + cat.slice(1)}</option>`).join("");
+        try {
+            let categories = JSON.parse(localStorage.getItem(CATEGORY_STORAGE_KEY));
+            if (!Array.isArray(categories)) categories = ["parlantes", "smartwatch", "cables", "adaptadores"];
+            
+            // Limpiamos datos nulos o rotos
+            const safeCategories = categories.filter(cat => cat && typeof cat === 'string');
+            
+            adminCategorySelect.innerHTML = safeCategories.map(cat => 
+                `<option value="${cat}">${cat.charAt(0).toUpperCase() + cat.slice(1)}</option>`
+            ).join("");
+        } catch (e) {
+            console.error("Error cargando categorías:", e);
+        }
     }
 
-    addCategoryBtn?.addEventListener("click", () => {
-        const newCat = newCategoryInput.value.trim().toLowerCase();
-        if (!newCat) return;
-        const categories = JSON.parse(localStorage.getItem(CATEGORY_STORAGE_KEY)) || ["parlantes", "smartwatch", "cables", "adaptadores"];
-        if (!categories.includes(newCat)) {
-            categories.push(newCat);
-            localStorage.setItem(CATEGORY_STORAGE_KEY, JSON.stringify(categories));
-            updateCategorySelect();
-            newCategoryInput.value = "";
-            alert("Categoría agregada");
-        }
-    });
-
-    // --- 3. RENDERIZAR LISTADO DE PRODUCTOS (ABAJO DEL FORMULARIO) ---
+    // --- 3. RENDERIZAR LISTA DE PRODUCTOS ---
     function renderAdminProducts() {
         if (!adminProductsContainer) return;
-        const products = JSON.parse(localStorage.getItem(PRODUCTS_STORAGE_KEY)) || [...defaultProducts];
         
-        if (products.length === 0) {
-            adminProductsContainer.innerHTML = "<p style='padding: 20px; color: #666;'>No hay productos guardados todavía.</p>";
-            return;
-        }
+        // Forzamos que se muestre por si el CSS lo está ocultando
+        adminProductsContainer.style.display = "block"; 
 
-        // Estilos e inyección de las tarjetas de producto
-        adminProductsContainer.innerHTML = `
-            <h3 style="margin: 30px 0 15px 0; font-size: 20px; border-top: 2px solid #eee; padding-top: 20px;">Productos cargados en Nexum</h3>
-            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; margin-top: 15px;">
-                ${products.map(p => `
-                    <div style="background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 15px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
-                        <div>
-                            <h4 style="margin: 0 0 5px 0; font-size: 16px; color: #111;">${p.name}</h4>
-                            <p style="margin: 0 0 10px 0; font-size: 13px; color: #666; text-transform: uppercase; font-weight: bold;">${p.category}</p>
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 14px;">
-                                <span style="color: #2e7d32; font-weight: bold;">$${p.price}</span>
-                                <span style="color: #555;">Stock: <strong>${p.stock} u.</strong></span>
+        try {
+            let products = JSON.parse(localStorage.getItem(PRODUCTS_STORAGE_KEY));
+            if (!Array.isArray(products)) products = [...defaultProducts];
+            
+            // Filtramos productos que puedan estar rotos
+            const safeProducts = products.filter(p => p && p.id && p.name);
+
+            if (safeProducts.length === 0) {
+                adminProductsContainer.innerHTML = `
+                    <div style="margin-top: 40px; padding: 20px; background: #f8f9fa; border: 1px dashed #ccc; border-radius: 8px; text-align: center;">
+                        <h3 style="margin-bottom: 10px; color: #333;">No hay productos</h3>
+                        <p style="color: #666; margin: 0;">Los productos que agregues aparecerán aquí.</p>
+                    </div>`;
+                return;
+            }
+
+            adminProductsContainer.innerHTML = `
+                <div style="margin-top: 40px; border-top: 2px solid #eee; padding-top: 20px;">
+                    <h3 style="margin-bottom: 20px; font-size: 18px; color: #111;">Inventario de Nexum</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px;">
+                        ${safeProducts.map(p => `
+                            <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column; justify-content: space-between;">
+                                <div>
+                                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                                        <h4 style="margin: 0; font-size: 16px; color: #0f172a;">${p.name}</h4>
+                                        <span style="background: #f1f5f9; color: #475569; padding: 2px 8px; border-radius: 12px; font-size: 11px; text-transform: uppercase; font-weight: bold;">${p.category}</span>
+                                    </div>
+                                    <div style="display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 14px;">
+                                        <span style="color: #10b981; font-weight: bold;">$${p.price}</span>
+                                        <span style="color: #64748b;">Stock: <strong>${p.stock}</strong></span>
+                                    </div>
+                                </div>
+                                <div style="display: flex; gap: 8px; border-top: 1px solid #f1f5f9; padding-top: 12px;">
+                                    <button type="button" class="action-edit-btn" data-id="${p.id}" style="flex: 1; background: #0f172a; color: white; border: none; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; transition: background 0.2s;">Editar</button>
+                                    <button type="button" class="action-delete-btn" data-id="${p.id}" style="flex: 1; background: #ef4444; color: white; border: none; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; transition: background 0.2s;">Borrar</button>
+                                </div>
                             </div>
-                        </div>
-                        <div style="display: flex; gap: 10px; border-top: 1px solid #f0f0f0; padding-top: 10px;">
-                            <button type="button" class="action-edit-btn" data-id="${p.id}" style="flex: 1; background: #007bff; color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 13px;">Editar</button>
-                            <button type="button" class="action-delete-btn" data-id="${p.id}" style="flex: 1; background: #dc3545; color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 13px;">Borrar</button>
-                        </div>
+                        `).join("")}
                     </div>
-                `).join("")}
-            </div>
-        `;
+                </div>
+            `;
+        } catch (e) {
+            console.error("Error renderizando productos:", e);
+            adminProductsContainer.innerHTML = "<p style='color:red;'>Error al cargar los productos. Revisá la consola.</p>";
+        }
     }
 
-    // --- 4. ACCIONES (EDITAR Y BORRAR) ---
+    // --- 4. EVENTOS DE ACCIÓN (EDITAR Y BORRAR) ---
     adminProductsContainer?.addEventListener("click", (e) => {
         const id = Number(e.target.dataset.id);
         if (!id) return;
 
-        let products = JSON.parse(localStorage.getItem(PRODUCTS_STORAGE_KEY)) || [...defaultProducts];
+        let products = JSON.parse(localStorage.getItem(PRODUCTS_STORAGE_KEY)) || [];
 
-        // Acción: Borrar
+        // BORRAR
         if (e.target.classList.contains("action-delete-btn")) {
-            if (confirm("¿Estás seguro de que querés eliminar este producto?")) {
+            if (confirm(`¿Seguro que querés eliminar este producto?`)) {
                 products = products.filter(p => p.id !== id);
                 localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(products));
                 renderAdminProducts();
             }
         }
 
-        // Acción: Editar
+        // EDITAR
         if (e.target.classList.contains("action-edit-btn")) {
             const prod = products.find(p => p.id === id);
             if (prod) {
@@ -141,7 +140,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (adminDescription) adminDescription.value = prod.description || "";
                 if (adminColors) adminColors.value = prod.colors ? prod.colors.map(c => `${c.name}:${c.value}`).join(",") : "";
                 
-                // Mover pantalla automáticamente al formulario arriba
                 window.scrollTo({ top: 0, behavior: 'smooth' });
                 adminName?.focus();
                 
@@ -151,18 +149,11 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // Botón Limpiar
-    adminClearBtn?.addEventListener("click", () => {
-        if (adminForm) adminForm.reset();
-        if (adminProductId) adminProductId.value = "";
-        const submitBtn = adminForm?.querySelector('button[type="submit"]');
-        if (submitBtn) submitBtn.textContent = "Guardar producto";
-    });
-
-    // --- 5. ENVIAR FORMULARIO (GUARDAR O ACTUALIZAR) ---
+    // --- 5. GUARDAR Y ACTUALIZAR FORMULARIO ---
     adminForm?.addEventListener("submit", (e) => {
         e.preventDefault();
-        let products = JSON.parse(localStorage.getItem(PRODUCTS_STORAGE_KEY)) || [...defaultProducts];
+        let products = JSON.parse(localStorage.getItem(PRODUCTS_STORAGE_KEY));
+        if (!Array.isArray(products)) products = [...defaultProducts];
         
         const id = adminProductId.value ? Number(adminProductId.value) : Date.now();
         
@@ -176,20 +167,11 @@ document.addEventListener("DOMContentLoaded", () => {
             image: "./assets/favicon.png"
         };
 
-        if (adminColors && adminColors.value.trim() !== "") {
-            productData.colors = adminColors.value.split(",").map(el => ({
-                name: el.split(":")[0]?.trim(),
-                value: el.split(":")[1]?.trim() || "#111"
-            }));
-        }
-
         const index = products.findIndex(p => p.id === id);
         if (index !== -1) {
-            products[index] = productData;
-            alert("Producto actualizado con éxito.");
+            products[index] = productData; // Actualiza el existente
         } else {
-            products.push(productData);
-            alert("Producto guardado con éxito.");
+            products.push(productData); // Agrega uno nuevo
         }
 
         localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(products));
@@ -199,10 +181,44 @@ document.addEventListener("DOMContentLoaded", () => {
         const submitBtn = adminForm.querySelector('button[type="submit"]');
         if (submitBtn) submitBtn.textContent = "Guardar producto";
 
-        renderAdminProducts();
+        renderAdminProducts(); // Refresca la vista
     });
 
-    // Ejecuciones iniciales automáticas
-    updateCategorySelect();
-    renderAdminProducts();
+    // --- RESTO DE EVENTOS ---
+    adminClearBtn?.addEventListener("click", () => {
+        if (adminForm) adminForm.reset();
+        if (adminProductId) adminProductId.value = "";
+        const submitBtn = adminForm?.querySelector('button[type="submit"]');
+        if (submitBtn) submitBtn.textContent = "Guardar producto";
+    });
+
+    addCategoryBtn?.addEventListener("click", () => {
+        const newCat = newCategoryInput.value.trim().toLowerCase();
+        if (!newCat) return;
+        let categories = JSON.parse(localStorage.getItem(CATEGORY_STORAGE_KEY)) || ["parlantes", "smartwatch", "cables", "adaptadores"];
+        if (!categories.includes(newCat)) {
+            categories.push(newCat);
+            localStorage.setItem(CATEGORY_STORAGE_KEY, JSON.stringify(categories));
+            updateCategorySelect();
+            newCategoryInput.value = "";
+        }
+    });
+
+    document.querySelector("#adminLoginForm")?.addEventListener("submit", (e) => {
+        e.preventDefault();
+        if (document.querySelector("#adminPassword")?.value === ADMIN_PASSWORD) {
+            localStorage.setItem(ADMIN_SESSION_KEY, "true");
+            checkSession();
+        } else {
+            alert("Clave incorrecta");
+        }
+    });
+
+    logoutBtn?.addEventListener("click", () => {
+        localStorage.removeItem(ADMIN_SESSION_KEY);
+        location.reload();
+    });
+
+    // Iniciar chequeo
+    checkSession();
 });
