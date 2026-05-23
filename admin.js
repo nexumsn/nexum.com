@@ -10,7 +10,6 @@ const defaultProducts = [
 ];
 
 document.addEventListener("DOMContentLoaded", () => {
-    // --- SELECTORES ---
     const adminLogin = document.querySelector("#adminLogin");
     const adminPanel = document.querySelector("#adminPanel");
     const adminForm = document.querySelector("#adminForm");
@@ -29,7 +28,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const adminColors = document.querySelector("#adminColors");
     const adminClearBtn = document.querySelector("#adminClear");
 
-    // --- 1. GESTIÓN DE SESIÓN ---
     function checkSession() {
         const isLogged = localStorage.getItem(ADMIN_SESSION_KEY) === "true";
         if (adminLogin) adminLogin.style.display = isLogged ? "none" : "block";
@@ -42,7 +40,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // --- 2. LÓGICA DE CATEGORÍAS ---
     function updateCategorySelect() {
         if (!adminCategorySelect) return;
         try {
@@ -60,7 +57,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 adminCategorySelect.value = valorActual;
             }
         } catch (e) {
-            console.error("Error cargando categorías:", e);
+            console.error("Error:", e);
         }
     }
 
@@ -73,19 +70,10 @@ document.addEventListener("DOMContentLoaded", () => {
         deleteCatBtn.textContent = "Borrar seleccionada";
         
         deleteCatBtn.style.cssText = `
-            background-color: #ef4444; 
-            color: #ffffff; 
-            border: none; 
-            padding: 8px 12px; 
-            font-size: 13px; 
-            font-weight: 600; 
-            cursor: pointer; 
-            border-radius: 4px; 
-            margin-top: 8px;
-            width: 100%;
-            transition: background-color 0.2s;
+            background-color: #ef4444; color: #ffffff; border: none; padding: 8px 12px; 
+            font-size: 13px; font-weight: 600; cursor: pointer; border-radius: 4px; 
+            margin-top: 8px; width: 100%; transition: background-color 0.2s;
         `;
-        
         categoryAddContainer.appendChild(deleteCatBtn);
 
         deleteCatBtn.addEventListener("click", () => {
@@ -93,19 +81,15 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!catToDelete) return;
 
             let currentProducts = JSON.parse(localStorage.getItem(PRODUCTS_STORAGE_KEY)) || [];
-            const isUsed = currentProducts.some(p => p.category === catToDelete);
-
-            if (isUsed) {
-                alert(`⚠️ Atención: No podés borrar la categoría "${catToDelete.toUpperCase()}" porque hay productos activos usándola. Cambiale la categoría a esos productos primero.`);
+            if (currentProducts.some(p => p.category === catToDelete)) {
+                alert(`⚠️ No podés borrar "${catToDelete.toUpperCase()}" porque hay productos usándola.`);
                 return;
             }
 
-            if (confirm(`¿Confirmás que querés eliminar la categoría "${catToDelete.toUpperCase()}" definitivamente?`)) {
+            if (confirm(`¿Eliminar la categoría "${catToDelete.toUpperCase()}"?`)) {
                 let currentCategories = JSON.parse(localStorage.getItem(CATEGORY_STORAGE_KEY)) || [];
-                currentCategories = currentCategories.filter(c => c !== catToDelete);
-                localStorage.setItem(CATEGORY_STORAGE_KEY, JSON.stringify(currentCategories));
+                localStorage.setItem(CATEGORY_STORAGE_KEY, JSON.stringify(currentCategories.filter(c => c !== catToDelete)));
                 updateCategorySelect();
-                alert("Categoría eliminada del sistema.");
             }
         });
     }
@@ -122,7 +106,6 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // --- 3. RENDERIZAR LISTA DE PRODUCTOS ---
     function renderAdminProducts() {
         if (!adminProductsContainer) return;
         adminProductsContainer.style.display = "block"; 
@@ -134,33 +117,28 @@ document.addEventListener("DOMContentLoaded", () => {
             const safeProducts = products.filter(p => p && p.id && p.name);
 
             if (safeProducts.length === 0) {
-                adminProductsContainer.innerHTML = `
-                    <div style="margin-top: 40px; padding: 20px; background: #f8f9fa; border: 1px dashed #ccc; border-radius: 8px; text-align: center;">
-                        <h3 style="margin-bottom: 10px; color: #333;">Inventario vacío</h3>
-                        <p style="color: #666; margin: 0;">Los productos ingresados aparecerán aquí.</p>
-                    </div>`;
+                adminProductsContainer.innerHTML = `<div style="padding: 20px; text-align: center;">Inventario vacío</div>`;
                 return;
             }
 
             adminProductsContainer.innerHTML = `
                 <div style="margin-top: 40px; border-top: 2px solid #eee; padding-top: 20px;">
-                    <h3 style="margin-bottom: 20px; font-size: 18px; color: #111;">Inventario de Nexum</h3>
-                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px;">
+                    <h3 style="margin-bottom: 20px; font-size: 18px; color: #111;">Inventario</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px;">
                         ${safeProducts.map(p => `
-                            <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column; justify-content: space-between;">
-                                <div>
-                                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
-                                        <h4 style="margin: 0; font-size: 16px; color: #0f172a;">${p.name}</h4>
-                                        <span style="background: #f1f5f9; color: #475569; padding: 2px 8px; border-radius: 12px; font-size: 11px; text-transform: uppercase; font-weight: bold;">${p.category}</span>
-                                    </div>
-                                    <div style="display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 14px;">
-                                        <span style="color: #10b981; font-weight: bold;">$${p.price}</span>
-                                        <span style="color: #64748b;">Stock: <strong>${p.stock}</strong></span>
-                                    </div>
+                            <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); display: flex; flex-direction: column;">
+                                <img src="${p.image || './assets/favicon.png'}" alt="Foto" style="width: 100%; height: 140px; object-fit: contain; background: #f8f9fa; border-radius: 6px; margin-bottom: 12px; border: 1px solid #eee;" />
+                                
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                    <h4 style="margin: 0; font-size: 16px; color: #0f172a;">${p.name}</h4>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 14px;">
+                                    <span style="color: #10b981; font-weight: bold;">$${p.price}</span>
+                                    <span style="color: #64748b;">Stock: <strong>${p.stock}</strong></span>
                                 </div>
                                 <div style="display: flex; gap: 8px; border-top: 1px solid #f1f5f9; padding-top: 12px;">
-                                    <button type="button" class="action-edit-btn" data-id="${p.id}" style="flex: 1; background: #0f172a; color: white; border: none; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">Editar</button>
-                                    <button type="button" class="action-delete-btn" data-id="${p.id}" style="flex: 1; background: #ef4444; color: white; border: none; padding: 8px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600;">Borrar</button>
+                                    <button type="button" class="action-edit-btn" data-id="${p.id}" style="flex: 1; background: #0f172a; color: white; border: none; padding: 8px; border-radius: 6px; cursor: pointer;">Editar</button>
+                                    <button type="button" class="action-delete-btn" data-id="${p.id}" style="flex: 1; background: #ef4444; color: white; border: none; padding: 8px; border-radius: 6px; cursor: pointer;">Borrar</button>
                                 </div>
                             </div>
                         `).join("")}
@@ -168,12 +146,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 </div>
             `;
         } catch (e) {
-            console.error("Error renderizando productos:", e);
             adminProductsContainer.innerHTML = "<p style='color:red;'>Error al cargar los productos.</p>";
         }
     }
 
-    // --- 4. EVENTOS DE ACCIÓN (EDITAR Y BORRAR PRODUCTOS) ---
     adminProductsContainer?.addEventListener("click", (e) => {
         const id = Number(e.target.dataset.id);
         if (!id) return;
@@ -181,9 +157,8 @@ document.addEventListener("DOMContentLoaded", () => {
         let products = JSON.parse(localStorage.getItem(PRODUCTS_STORAGE_KEY)) || [];
 
         if (e.target.classList.contains("action-delete-btn")) {
-            if (confirm(`¿Confirmás la eliminación de este producto?`)) {
-                products = products.filter(p => p.id !== id);
-                localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(products));
+            if (confirm(`¿Confirmás la eliminación?`)) {
+                localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(products.filter(p => p.id !== id)));
                 renderAdminProducts();
             }
         }
@@ -197,18 +172,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (adminPrice) adminPrice.value = prod.price;
                 if (adminStock) adminStock.value = prod.stock;
                 if (adminDescription) adminDescription.value = prod.description || "";
-                if (adminColors) adminColors.value = prod.colors ? prod.colors.map(c => `${c.name}:${c.value}`).join(",") : "";
                 
                 window.scrollTo({ top: 0, behavior: 'smooth' });
-                adminName?.focus();
-                
                 const submitBtn = adminForm.querySelector('button[type="submit"]');
                 if (submitBtn) submitBtn.textContent = "Actualizar producto";
             }
         }
     });
 
-    // --- 5. GUARDAR Y ACTUALIZAR FORMULARIO (CORREGIDO) ---
     adminForm?.addEventListener("submit", (e) => {
         e.preventDefault();
         let products = JSON.parse(localStorage.getItem(PRODUCTS_STORAGE_KEY));
@@ -232,23 +203,24 @@ document.addEventListener("DOMContentLoaded", () => {
             productData.image = finalImage;
 
             if (index !== -1) {
-                // Mantiene el resto de las propiedades viejas si existen
                 products[index] = { ...products[index], ...productData };
             } else {
                 products.push(productData);
             }
 
-            localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(products));
-            adminForm.reset();
-            if (adminProductId) adminProductId.value = "";
-            
-            const submitBtn = adminForm.querySelector('button[type="submit"]');
-            if (submitBtn) submitBtn.textContent = "Guardar producto";
-
-            renderAdminProducts();
+            try {
+                // ACÁ ESTÁ EL SEGURO DE PESO DE IMAGEN
+                localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(products));
+                adminForm.reset();
+                if (adminProductId) adminProductId.value = "";
+                const submitBtn = adminForm.querySelector('button[type="submit"]');
+                if (submitBtn) submitBtn.textContent = "Guardar producto";
+                renderAdminProducts();
+            } catch (error) {
+                alert("❌ ERROR: La imagen es demasiado pesada y el sistema se quedó sin espacio. Probá con una foto de menor calidad (menos de 500kb idealmente).");
+            }
         };
 
-        // Si se seleccionó una foto en el input, la convertimos para poder guardarla
         if (imageInput && imageInput.files.length > 0) {
             const reader = new FileReader();
             reader.onload = function(event) {
@@ -256,16 +228,14 @@ document.addEventListener("DOMContentLoaded", () => {
             };
             reader.readAsDataURL(imageInput.files[0]);
         } else {
-            // Si NO subieron foto
-            let imageToSave = "./assets/favicon.png"; // Logo por defecto (solo para los nuevos)
+            let imageToSave = "./assets/favicon.png"; 
             if (index !== -1 && products[index].image) {
-                imageToSave = products[index].image; // Rescata la imagen que el producto ya tenía!
+                imageToSave = products[index].image; 
             }
             saveProduct(imageToSave);
         }
     });
 
-    // --- RESTO DE EVENTOS ---
     adminClearBtn?.addEventListener("click", () => {
         if (adminForm) adminForm.reset();
         if (adminProductId) adminProductId.value = "";
