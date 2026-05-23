@@ -226,7 +226,7 @@ function renderProducts(categoryId) {
 
         return `
         <article class="product-card" style="position: relative;">
-          ${isOutOfStock ? `<span style="position: absolute; top: 0; left: 0; background: #0f172a; color: #f87171; padding: 6px 12px; font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; border-bottom-right-radius: 8px; z-index: 10;">Sin Stock</span>` : ""}
+          ${isOutOfStock ? `<span style="position: absolute; top: 0; left: 0; background: #4b5563; color: #fecaca; padding: 10px 20px; font-size: 14px; font-weight: bold; text-transform: uppercase; letter-spacing: 1.5px; border-bottom-right-radius: 8px; z-index: 10; box-shadow: 2px 2px 5px rgba(0,0,0,0.2);">Sin Stock</span>` : ""}
           <img class="product-image" src="${product.image}" alt="${product.name}" />
           <div class="product-body">
             <span class="product-category">${getCategoryName(product.category)}</span>
