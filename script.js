@@ -221,19 +221,20 @@ function renderProducts(categoryId) {
       (product) => {
         // Validación de Stock
         const isOutOfStock = product.stock <= 0;
-        const stockBadge = isOutOfStock ? `<span class="badge-sin-stock">Sin stock</span>` : '';
         const btnDisabled = isOutOfStock ? 'disabled' : '';
         const btnText = isOutOfStock ? 'Agotado' : 'Agregar';
 
         return `
         <article class="product-card" style="position: relative;">
-          ${stockBadge}
           <img class="product-image" src="${product.image}" alt="${product.name}" />
           <div class="product-body">
             <span class="product-category">${getCategoryName(product.category)}</span>
             <h3>${product.name}</h3>
             <p>${product.description}</p>
-            <span class="stock-label">Stock disponible: ${product.stock}</span>
+            ${product.stock <= 0 
+                ? `<span style="background: #0f172a; color: #f87171; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid #1e293b; display: inline-block; margin-bottom: 10px;">Sin Stock</span>` 
+                : `<span class="stock-label">Stock disponible: ${product.stock}</span>`
+            }
             ${
               product.colors
                 ? `<div class="product-colors">
