@@ -525,13 +525,23 @@ function fillAdminForm(productId) {
 async function saveAdminProduct(event) {
   event.preventDefault();
 
-  const productId = Number(adminProductId.value);
+  // 1. Buscamos el ID. Si está vacío, asume que es 0 (producto nuevo)
+  const productId = Number(adminProductId.value) || 0;
   const currentProduct = products.find((entry) => entry.id === productId);
-  const imageFile = adminImage.files[0];
+  
+  // 2. Lógica a prueba de balas para la imagen
+  let finalImage = "./assets/favicon.png"; // Fallback extremo
+  
+  if (adminImage.files && adminImage.files.length > 0) {
+    // A) Si elegiste un archivo nuevo de tu PC en este momento, usa ese.
+    finalImage = await readImageFile(adminImage.files[0]);
+  } else if (currentProduct && currentProduct.image) {
+    // B) Si NO subiste nada nuevo, pero el producto ya existía, ¡MANTIENE LA SUYA!
+    finalImage = currentProduct.image;
+  }
+
   const colors = parseAdminColors(adminColors.value);
-  const image = imageFile
-    ? await readImageFile(imageFile)
-    : currentProduct?.image || "./assets/favicon.png";
+  
   const product = {
     id: productId || Math.max(0, ...products.map((entry) => entry.id), 0) + 1,
     name: adminName.value.trim(),
@@ -539,7 +549,7 @@ async function saveAdminProduct(event) {
     price: Number(adminPrice.value),
     stock: Number(adminStock.value),
     description: adminDescription.value.trim(),
-    image,
+    image: finalImage,
   };
 
   if (colors.length > 0) product.colors = colors;
@@ -553,6 +563,9 @@ async function saveAdminProduct(event) {
   saveProducts();
   resetAdminForm();
   refreshCatalog();
+  
+  // Te agrego un mensajito para que sepas que guardó bien
+  alert("¡Producto actualizado correctamente!"); 
 }
 
 function deleteAdminProduct(productId) {
