@@ -79,63 +79,57 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // --- 3. RENDERIZAR TABLA DE PRODUCTOS (CON EDITAR Y BORRAR) ---
+    // --- 3. RENDERIZAR LISTADO DE PRODUCTOS (ABAJO DEL FORMULARIO) ---
     function renderAdminProducts() {
         if (!adminProductsContainer) return;
         const products = JSON.parse(localStorage.getItem(PRODUCTS_STORAGE_KEY)) || [...defaultProducts];
         
         if (products.length === 0) {
-            adminProductsContainer.innerHTML = "<p>No hay productos cargados.</p>";
+            adminProductsContainer.innerHTML = "<p style='padding: 20px; color: #666;'>No hay productos guardados todavía.</p>";
             return;
         }
 
+        // Estilos e inyección de las tarjetas de producto
         adminProductsContainer.innerHTML = `
-            <h3 style="margin-top:20px;">Productos cargados:</h3>
-            <table style="width:100%; border-collapse: collapse; margin-top: 10px; font-size: 14px;">
-                <thead>
-                    <tr style="background:#222; color:#fff; text-align:left;">
-                        <th style="padding:10px;">Nombre</th>
-                        <th style="padding:10px;">Categoría</th>
-                        <th style="padding:10px;">Precio</th>
-                        <th style="padding:10px;">Stock</th>
-                        <th style="padding:10px; text-align:center;">Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${products.map(p => `
-                        <tr style="border-bottom: 1px solid #ddd;">
-                            <td style="padding:10px;"><strong>${p.name}</strong></td>
-                            <td style="padding:10px;">${p.category}</td>
-                            <td style="padding:10px;">$${p.price}</td>
-                            <td style="padding:10px;">${p.stock} u.</td>
-                            <td style="padding:10px; text-align:center;">
-                                <button type="button" class="action-edit-btn" data-id="${p.id}" style="background:#007bff; color:#fff; border:none; padding:5px 10px; cursor:pointer; margin-right:5px; border-radius:3px;">Editar</button>
-                                <button type="button" class="action-delete-btn" data-id="${p.id}" style="background:#dc3545; color:#fff; border:none; padding:5px 10px; cursor:pointer; border-radius:3px;">Borrar</button>
-                            </td>
-                        </tr>
-                    `).join("")}
-                </tbody>
-            </table>
+            <h3 style="margin: 30px 0 15px 0; font-size: 20px; border-top: 2px solid #eee; padding-top: 20px;">Productos cargados en Nexum</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; margin-top: 15px;">
+                ${products.map(p => `
+                    <div style="background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; padding: 15px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                        <div>
+                            <h4 style="margin: 0 0 5px 0; font-size: 16px; color: #111;">${p.name}</h4>
+                            <p style="margin: 0 0 10px 0; font-size: 13px; color: #666; text-transform: uppercase; font-weight: bold;">${p.category}</p>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 14px;">
+                                <span style="color: #2e7d32; font-weight: bold;">$${p.price}</span>
+                                <span style="color: #555;">Stock: <strong>${p.stock} u.</strong></span>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 10px; border-top: 1px solid #f0f0f0; padding-top: 10px;">
+                            <button type="button" class="action-edit-btn" data-id="${p.id}" style="flex: 1; background: #007bff; color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 13px;">Editar</button>
+                            <button type="button" class="action-delete-btn" data-id="${p.id}" style="flex: 1; background: #dc3545; color: white; border: none; padding: 8px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 13px;">Borrar</button>
+                        </div>
+                    </div>
+                `).join("")}
+            </div>
         `;
     }
 
-    // --- 4. ACCIONES DINÁMICAS (EDITAR Y BORRAR) ---
+    // --- 4. ACCIONES (EDITAR Y BORRAR) ---
     adminProductsContainer?.addEventListener("click", (e) => {
         const id = Number(e.target.dataset.id);
         if (!id) return;
 
         let products = JSON.parse(localStorage.getItem(PRODUCTS_STORAGE_KEY)) || [...defaultProducts];
 
-        // Acción Borrar
+        // Acción: Borrar
         if (e.target.classList.contains("action-delete-btn")) {
-            if (confirm("¿Seguro que querés eliminar este producto?")) {
+            if (confirm("¿Estás seguro de que querés eliminar este producto?")) {
                 products = products.filter(p => p.id !== id);
                 localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(products));
                 renderAdminProducts();
             }
         }
 
-        // Acción Editar
+        // Acción: Editar
         if (e.target.classList.contains("action-edit-btn")) {
             const prod = products.find(p => p.id === id);
             if (prod) {
@@ -147,17 +141,17 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (adminDescription) adminDescription.value = prod.description || "";
                 if (adminColors) adminColors.value = prod.colors ? prod.colors.map(c => `${c.name}:${c.value}`).join(",") : "";
                 
-                // Hacer foco en el formulario
+                // Mover pantalla automáticamente al formulario arriba
+                window.scrollTo({ top: 0, behavior: 'smooth' });
                 adminName?.focus();
                 
-                // Cambiar el texto del botón principal temporalmente si se desea
                 const submitBtn = adminForm.querySelector('button[type="submit"]');
                 if (submitBtn) submitBtn.textContent = "Actualizar producto";
             }
         }
     });
 
-    // Botón Limpiar formulario
+    // Botón Limpiar
     adminClearBtn?.addEventListener("click", () => {
         if (adminForm) adminForm.reset();
         if (adminProductId) adminProductId.value = "";
@@ -165,7 +159,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (submitBtn) submitBtn.textContent = "Guardar producto";
     });
 
-    // --- 5. GUARDAR O ACTUALIZAR PRODUCTOS ---
+    // --- 5. ENVIAR FORMULARIO (GUARDAR O ACTUALIZAR) ---
     adminForm?.addEventListener("submit", (e) => {
         e.preventDefault();
         let products = JSON.parse(localStorage.getItem(PRODUCTS_STORAGE_KEY)) || [...defaultProducts];
@@ -179,26 +173,23 @@ document.addEventListener("DOMContentLoaded", () => {
             price: Number(adminPrice.value),
             stock: Number(adminStock.value),
             description: adminDescription.value.trim(),
-            image: "./assets/favicon.png" // Podés expandir esto luego con el FileReader si lo usás
+            image: "./assets/favicon.png"
         };
 
-        // Si tiene colores válidos, los procesamos
         if (adminColors && adminColors.value.trim() !== "") {
-            productData.colors = adminColors.value.split(",").map(e => ({
-                name: e.split(":")[0]?.trim(),
-                value: e.split(":")[1]?.trim() || "#111"
+            productData.colors = adminColors.value.split(",").map(el => ({
+                name: el.split(":")[0]?.trim(),
+                value: el.split(":")[1]?.trim() || "#111"
             }));
         }
 
         const index = products.findIndex(p => p.id === id);
         if (index !== -1) {
-            // Reemplazamos si ya existía (Modo Editar)
             products[index] = productData;
-            alert("Producto actualizado correctamente");
+            alert("Producto actualizado con éxito.");
         } else {
-            // Añadimos nuevo si no existía (Modo Guardar)
             products.push(productData);
-            alert("Producto guardado con éxito");
+            alert("Producto guardado con éxito.");
         }
 
         localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(products));
@@ -211,7 +202,7 @@ document.addEventListener("DOMContentLoaded", () => {
         renderAdminProducts();
     });
 
-    // Inicializaciones automáticas al cargar
+    // Ejecuciones iniciales automáticas
     updateCategorySelect();
     renderAdminProducts();
 });
