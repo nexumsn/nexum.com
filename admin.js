@@ -17,7 +17,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const adminCategorySelect = document.querySelector("#adminCategory");
     const newCategoryInput = document.querySelector("#newCategory");
     const addCategoryBtn = document.querySelector("#addCategoryButton");
-    const categoryAddContainer = document.querySelector(".admin-category-add"); // Seleccionamos el div específico
+    const categoryAddContainer = document.querySelector(".admin-category-add");
     const logoutBtn = document.querySelector("#logoutAdmin");
     const adminProductsContainer = document.querySelector("#adminProducts");
 
@@ -64,9 +64,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // --- EL BOTÓN DE BORRAR CATEGORÍA (Integrado al HTML correctamente) ---
     function crearBotonBorrarCategoria() {
-        // Si no existe el div contenedor o ya creamos el botón, cancelamos
         if (!categoryAddContainer || document.querySelector("#deleteCatBtn")) return;
 
         const deleteCatBtn = document.createElement("button");
@@ -74,7 +72,6 @@ document.addEventListener("DOMContentLoaded", () => {
         deleteCatBtn.type = "button";
         deleteCatBtn.textContent = "Borrar seleccionada";
         
-        // Estilo Minimal & Tech para Nexum
         deleteCatBtn.style.cssText = `
             background-color: #ef4444; 
             color: #ffffff; 
@@ -89,7 +86,6 @@ document.addEventListener("DOMContentLoaded", () => {
             transition: background-color 0.2s;
         `;
         
-        // Lo agregamos adentro del div .admin-category-add, abajo del botón de agregar
         categoryAddContainer.appendChild(deleteCatBtn);
 
         deleteCatBtn.addEventListener("click", () => {
@@ -212,13 +208,14 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    // --- 5. GUARDAR Y ACTUALIZAR FORMULARIO ---
+    // --- 5. GUARDAR Y ACTUALIZAR FORMULARIO (CORREGIDO) ---
     adminForm?.addEventListener("submit", (e) => {
         e.preventDefault();
         let products = JSON.parse(localStorage.getItem(PRODUCTS_STORAGE_KEY));
         if (!Array.isArray(products)) products = [...defaultProducts];
         
         const id = adminProductId.value ? Number(adminProductId.value) : Date.now();
+        const index = products.findIndex(p => p.id === id);
         
         const productData = {
             id: id,
@@ -226,25 +223,46 @@ document.addEventListener("DOMContentLoaded", () => {
             category: adminCategorySelect.value,
             price: Number(adminPrice.value),
             stock: Number(adminStock.value),
-            description: adminDescription.value.trim(),
-            image: "./assets/favicon.png"
+            description: adminDescription.value.trim()
         };
 
-        const index = products.findIndex(p => p.id === id);
-        if (index !== -1) {
-            products[index] = productData;
+        const imageInput = document.querySelector("#adminImage");
+
+        const saveProduct = (finalImage) => {
+            productData.image = finalImage;
+
+            if (index !== -1) {
+                // Mantiene el resto de las propiedades viejas si existen
+                products[index] = { ...products[index], ...productData };
+            } else {
+                products.push(productData);
+            }
+
+            localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(products));
+            adminForm.reset();
+            if (adminProductId) adminProductId.value = "";
+            
+            const submitBtn = adminForm.querySelector('button[type="submit"]');
+            if (submitBtn) submitBtn.textContent = "Guardar producto";
+
+            renderAdminProducts();
+        };
+
+        // Si se seleccionó una foto en el input, la convertimos para poder guardarla
+        if (imageInput && imageInput.files.length > 0) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                saveProduct(event.target.result); 
+            };
+            reader.readAsDataURL(imageInput.files[0]);
         } else {
-            products.push(productData);
+            // Si NO subieron foto
+            let imageToSave = "./assets/favicon.png"; // Logo por defecto (solo para los nuevos)
+            if (index !== -1 && products[index].image) {
+                imageToSave = products[index].image; // Rescata la imagen que el producto ya tenía!
+            }
+            saveProduct(imageToSave);
         }
-
-        localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(products));
-        adminForm.reset();
-        if (adminProductId) adminProductId.value = "";
-        
-        const submitBtn = adminForm.querySelector('button[type="submit"]');
-        if (submitBtn) submitBtn.textContent = "Guardar producto";
-
-        renderAdminProducts();
     });
 
     // --- RESTO DE EVENTOS ---
