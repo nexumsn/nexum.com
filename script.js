@@ -90,7 +90,6 @@ function loadCategories() {
     }
   }
 
-  // Convertimos el texto simple de la categoría en un objeto con nombre capitalizado e imagen
   return parsedCategories.map((catId) => {
     const productRef = products.find((p) => p.category === catId);
     return {
@@ -159,7 +158,6 @@ function getCategoryName(categoryId) {
 function getCategoryFromHash() {
   const params = new URLSearchParams(window.location.hash.replace("#", ""));
   const categoryId = params.get("categoria");
-
   return categories.some((category) => category.id === categoryId) ? categoryId : null;
 }
 
@@ -173,11 +171,9 @@ function setCategoryHash(categoryId) {
 
 function scrollCatalogToTop() {
   if (!catalogSection) return;
-
   requestAnimationFrame(() => {
     const headerHeight = document.querySelector(".site-header")?.offsetHeight || 0;
     const top = catalogSection.getBoundingClientRect().top + window.scrollY - headerHeight - 12;
-
     window.scrollTo({
       top: Math.max(top, 0),
       behavior: "smooth",
@@ -195,7 +191,6 @@ function renderCategories() {
   productsGrid.innerHTML = categories
     .map((category) => {
       const count = products.filter((product) => product.category === category.id).length;
-
       return `
         <button class="category-card" type="button" data-category="${category.id}">
           <img class="category-image" src="${category.image}" alt="${category.name}" />
@@ -207,6 +202,7 @@ function renderCategories() {
     .join("");
 }
 
+// --- MODIFICADO: Render de productos con validación de Stock ---
 function renderProducts(categoryId) {
   const visibleProducts = products.filter((product) => product.category === categoryId);
 
@@ -222,8 +218,16 @@ function renderProducts(categoryId) {
     </div>
     ${visibleProducts
     .map(
-      (product) => `
-        <article class="product-card">
+      (product) => {
+        // Validación de Stock
+        const isOutOfStock = product.stock <= 0;
+        const stockBadge = isOutOfStock ? `<span class="badge-sin-stock">Sin stock</span>` : '';
+        const btnDisabled = isOutOfStock ? 'disabled' : '';
+        const btnText = isOutOfStock ? 'Agotado' : 'Agregar';
+
+        return `
+        <article class="product-card" style="position: relative;">
+          ${stockBadge}
           <img class="product-image" src="${product.image}" alt="${product.name}" />
           <div class="product-body">
             <span class="product-category">${getCategoryName(product.category)}</span>
@@ -256,13 +260,14 @@ function renderProducts(categoryId) {
             }
             <div class="product-bottom">
               <span class="price">${money.format(product.price)}</span>
-              <button class="add-button" type="button" data-add="${product.id}">
-                Agregar
+              <button class="add-button" type="button" data-add="${product.id}" ${btnDisabled}>
+                ${btnText}
               </button>
             </div>
           </div>
         </article>
-      `,
+      `;
+      }
     )
     .join("")}
   `;
@@ -270,14 +275,12 @@ function renderProducts(categoryId) {
 
 function showSlide(index) {
   if (!carouselTrack || carouselSlides.length === 0) return;
-
   currentSlide = (index + carouselSlides.length) % carouselSlides.length;
   carouselTrack.style.transform = `translateX(-${currentSlide * 100}%)`;
 
   carouselSlides.forEach((slide, slideIndex) => {
     slide.classList.toggle("is-active", slideIndex === currentSlide);
   });
-
   carouselDots.forEach((dot, dotIndex) => {
     dot.classList.toggle("is-active", dotIndex === currentSlide);
   });
@@ -299,6 +302,7 @@ function getCartLines() {
   });
 }
 
+// --- MODIFICADO: Render de Carrito con validación en el botón "+" ---
 function renderCart() {
   const lines = getCartLines();
   const totalQuantity = lines.reduce((sum, item) => sum + item.quantity, 0);
@@ -322,7 +326,7 @@ function renderCart() {
               <div class="quantity-controls" aria-label="Cantidad de ${item.name}">
                 <button type="button" data-decrease="${item.cartKey}" aria-label="Restar ${item.name}">-</button>
                 <strong>${item.quantity}</strong>
-                <button type="button" data-increase="${item.cartKey}" aria-label="Sumar ${item.name}">+</button>
+                <button type="button" data-increase="${item.cartKey}" aria-label="Sumar ${item.name}" ${item.quantity >= item.stock ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''}>+</button>
               </div>
               <button class="remove-button" type="button" data-remove="${item.cartKey}">
                 Quitar
@@ -338,7 +342,6 @@ function renderCart() {
 function getSelectedColor(productId) {
   const product = products.find((entry) => entry.id === productId);
   if (!product?.colors?.length) return "";
-
   return document.querySelector(`input[name="color-${productId}"]:checked`)?.value || product.colors[0].name;
 }
 
@@ -346,17 +349,37 @@ function getCartKey(productId, colorName = "") {
   return colorName ? `${productId}-${colorName}` : String(productId);
 }
 
+// --- MODIFICADO: Agregar al carrito con límite de stock ---
 function addToCart(productId, colorName = getSelectedColor(productId)) {
+  const product = products.find((entry) => entry.id === productId);
+  if (!product) return;
+
   const key = getCartKey(productId, colorName);
   const current = cart.get(key) || { id: productId, key, color: colorName, quantity: 0 };
+
+  // Evitar agregar más del stock disponible
+  if (current.quantity >= product.stock) {
+    alert(`⚠️ Stock máximo alcanzado: Sólo quedan ${product.stock} unidades de ${product.name}.`);
+    return;
+  }
+
   cart.set(key, { ...current, quantity: current.quantity + 1 });
   renderCart();
   openCart();
 }
 
+// --- MODIFICADO: Sumar línea del carrito con límite de stock ---
 function increaseCartLine(cartKey) {
   const current = cart.get(cartKey);
   if (!current) return;
+
+  const product = products.find((entry) => entry.id === current.id);
+  
+  // Evitar sumar más del stock disponible
+  if (current.quantity >= product.stock) {
+    alert(`⚠️ Stock máximo alcanzado: Sólo quedan ${product.stock} unidades de ${product.name}.`);
+    return;
+  }
 
   cart.set(cartKey, { ...current, quantity: current.quantity + 1 });
   renderCart();
@@ -371,7 +394,6 @@ function decreaseFromCart(cartKey) {
   } else {
     cart.set(cartKey, { ...current, quantity: current.quantity - 1 });
   }
-
   renderCart();
 }
 
@@ -396,18 +418,15 @@ function buildWhatsAppMessage() {
         const colorText = item.selectedColor
           ? ` - Color: ${item.selectedColor}`
           : "";
-
         return `- ${item.name}${colorText} x${item.quantity}: ${money.format(item.price * item.quantity)}`;
       },
     )
     .join("\n");
-
   return `Hola! Quiero realizar este pedido:\n\n${productLines}\n\nTotal: ${money.format(total)}\n\nQuedo atento/a para coordinar.`;
 }
 
 function checkout() {
   if (cart.size === 0) return;
-
   const encodedMessage = encodeURIComponent(buildWhatsAppMessage());
   window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodedMessage}`, "_blank");
 }
@@ -417,15 +436,12 @@ function saveProducts() {
 }
 
 function refreshCatalog() {
-  // Refrescamos categorías también por si agregamos una nueva
   categories = loadCategories();
-  
   if (selectedCategory) {
     renderProducts(selectedCategory);
   } else {
     renderCategories();
   }
-
   renderCart();
   renderAdminProducts();
 }
@@ -436,7 +452,6 @@ function parseAdminColors(value) {
     .map((entry) => {
       const [name, colorValue] = entry.split(":").map((part) => part.trim());
       if (!name) return null;
-
       return {
         name,
         value: colorValue || "#111111",
@@ -465,7 +480,6 @@ function resetAdminForm() {
 
 function renderAdminProducts() {
   if (!adminProducts) return;
-
   adminProducts.innerHTML = products
     .map(
       (product) => `
