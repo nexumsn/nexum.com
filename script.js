@@ -38,7 +38,6 @@ const money = new Intl.NumberFormat("es-AR", {
   maximumFractionDigits: 0,
 });
 
-// Función auxiliar para procesar el archivo CSV de Google Sheets de forma segura
 function parseCSV(text) {
   const lines = text.split(/\r?\n/);
   return lines.filter(line => line.trim() !== "").map(line => {
@@ -61,7 +60,6 @@ function parseCSV(text) {
   });
 }
 
-// Carga los productos directamente desde Google Sheets en tiempo real
 async function fetchProductsFromSheets() {
   try {
     const response = await fetch(GOOGLE_SHEET_CSV_URL);
@@ -69,13 +67,11 @@ async function fetchProductsFromSheets() {
     
     const csvText = await response.text();
     const parsedRows = parseCSV(csvText);
-    
-    // Quitamos la primera fila que contiene los encabezados (id, name, etc)
     const dataRows = parsedRows.slice(1);
     
     return dataRows.map(row => {
       return {
-        id: Number(row[0]),
+        id: String(row[0]).trim(), // Acá está la magia: ahora acepta texto como AUR-A6S-CEL
         name: row[1] || "Producto sin nombre",
         category: (row[2] || "general").toLowerCase().trim(),
         price: Number(row[3]) || 0,
@@ -86,7 +82,7 @@ async function fetchProductsFromSheets() {
       };
     });
   } catch (error) {
-    console.error("Error cargando base de datos, usando datos locales de respaldo:", error);
+    console.error("Error cargando base de datos:", error);
     return [];
   }
 }
@@ -105,7 +101,6 @@ function parseAdminColors(value) {
     .filter(Boolean);
 }
 
-// Genera categorías automáticas basadas en los productos existentes en el Sheets
 function loadCategories() {
   const uniqueCategories = [...new Set(products.map(p => p.category))];
   return uniqueCategories.map((catId) => {
@@ -128,7 +123,6 @@ function getCategoryFromHash() {
   return categories.some((category) => category.id === categoryId) ? categoryId : null;
 }
 
-// Sincroniza la URL con la categoría seleccionada para permitir navegación fluida
 function setCategoryHash(categoryId) {
   if (categoryId) {
     window.location.hash = `categoria=${categoryId}`;
@@ -317,7 +311,6 @@ function addToCart(productId, colorName = getSelectedColor(productId)) {
   openCart();
 }
 
-// Incrementa la cantidad de un artículo validando contra el stock del Sheets
 function increaseCartLine(cartKey) {
   const current = cart.get(cartKey);
   if (!current) return;
@@ -335,7 +328,6 @@ function decreaseFromCart(cartKey) {
 }
 
 function openCart() { cartPanel.classList.add("is-open"); overlay.hidden = false; }
-// Cierra el panel lateral del carrito de compras
 function closeCart() { cartPanel.classList.remove("is-open"); overlay.hidden = true; }
 
 function buildWhatsAppMessage() {
@@ -362,7 +354,9 @@ document.addEventListener("click", (event) => {
 
   if (categoryId) { selectedCategory = categoryId; setCategoryHash(selectedCategory); renderProducts(selectedCategory); scrollCatalogToTop(); }
   if (backCategories) { selectedCategory = null; setCategoryHash(null); renderCategories(); scrollCatalogToTop(); }
-  if (addId) addToCart(Number(addId));
+  
+  // Acá también le sacamos la conversión de número para que acepte tus códigos de letras
+  if (addId) addToCart(String(addId)); 
   if (increaseId) increaseCartLine(increaseId);
   if (decreaseId) decreaseFromCart(decreaseId);
   if (removeId) { cart.delete(removeId); renderCart(); }
@@ -384,7 +378,6 @@ window.addEventListener("hashchange", () => {
   scrollCatalogToTop();
 });
 
-// Inicialización de la aplicación leyendo Google Sheets en tiempo real
 async function initApp() {
   products = await fetchProductsFromSheets();
   categories = loadCategories();
