@@ -40,36 +40,79 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     }
 
-    // --- 2. LÓGICA DE CATEGORÍAS (A prueba de fallos) ---
+    // --- 2. LÓGICA DE CATEGORÍAS (Con Borrado Seguro) ---
     function updateCategorySelect() {
         if (!adminCategorySelect) return;
         try {
             let categories = JSON.parse(localStorage.getItem(CATEGORY_STORAGE_KEY));
             if (!Array.isArray(categories)) categories = ["parlantes", "smartwatch", "cables", "adaptadores"];
             
-            // Limpiamos datos nulos o rotos
             const safeCategories = categories.filter(cat => cat && typeof cat === 'string');
             
             adminCategorySelect.innerHTML = safeCategories.map(cat => 
                 `<option value="${cat}">${cat.charAt(0).toUpperCase() + cat.slice(1)}</option>`
             ).join("");
+
+            // Crear botón de borrar categoría si no existe en el HTML
+            let deleteCatBtn = document.querySelector("#deleteCatBtn");
+            if (!deleteCatBtn) {
+                deleteCatBtn = document.createElement("button");
+                deleteCatBtn.id = "deleteCatBtn";
+                deleteCatBtn.type = "button";
+                deleteCatBtn.textContent = "Borrar esta categoría";
+                deleteCatBtn.style.cssText = "background: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; margin-top: 10px; display: block; font-weight: bold;";
+                
+                adminCategorySelect.insertAdjacentElement("afterend", deleteCatBtn);
+
+                deleteCatBtn.addEventListener("click", () => {
+                    const catToDelete = adminCategorySelect.value;
+                    if (!catToDelete) return;
+
+                    // Validación de seguridad
+                    let currentProducts = JSON.parse(localStorage.getItem(PRODUCTS_STORAGE_KEY)) || [];
+                    const isUsed = currentProducts.some(p => p.category === catToDelete);
+
+                    if (isUsed) {
+                        alert(`⚠️ No podés borrar "${catToDelete.toUpperCase()}" porque hay productos usándola. Cambiale la categoría a esos productos o borralos primero.`);
+                        return;
+                    }
+
+                    if (confirm(`¿Seguro que querés eliminar la categoría "${catToDelete.toUpperCase()}"?`)) {
+                        let currentCategories = JSON.parse(localStorage.getItem(CATEGORY_STORAGE_KEY)) || [];
+                        currentCategories = currentCategories.filter(c => c !== catToDelete);
+                        localStorage.setItem(CATEGORY_STORAGE_KEY, JSON.stringify(currentCategories));
+                        updateCategorySelect();
+                        alert("Categoría eliminada con éxito.");
+                    }
+                });
+            }
         } catch (e) {
             console.error("Error cargando categorías:", e);
         }
     }
 
+    addCategoryBtn?.addEventListener("click", () => {
+        const newCat = newCategoryInput.value.trim().toLowerCase();
+        if (!newCat) return;
+        let categories = JSON.parse(localStorage.getItem(CATEGORY_STORAGE_KEY)) || ["parlantes", "smartwatch", "cables", "adaptadores"];
+        if (!categories.includes(newCat)) {
+            categories.push(newCat);
+            localStorage.setItem(CATEGORY_STORAGE_KEY, JSON.stringify(categories));
+            updateCategorySelect();
+            newCategoryInput.value = "";
+            alert("Categoría agregada");
+        }
+    });
+
     // --- 3. RENDERIZAR LISTA DE PRODUCTOS ---
     function renderAdminProducts() {
         if (!adminProductsContainer) return;
-        
-        // Forzamos que se muestre por si el CSS lo está ocultando
         adminProductsContainer.style.display = "block"; 
 
         try {
             let products = JSON.parse(localStorage.getItem(PRODUCTS_STORAGE_KEY));
             if (!Array.isArray(products)) products = [...defaultProducts];
             
-            // Filtramos productos que puedan estar rotos
             const safeProducts = products.filter(p => p && p.id && p.name);
 
             if (safeProducts.length === 0) {
@@ -119,7 +162,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
         let products = JSON.parse(localStorage.getItem(PRODUCTS_STORAGE_KEY)) || [];
 
-        // BORRAR
         if (e.target.classList.contains("action-delete-btn")) {
             if (confirm(`¿Seguro que querés eliminar este producto?`)) {
                 products = products.filter(p => p.id !== id);
@@ -128,7 +170,6 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }
 
-        // EDITAR
         if (e.target.classList.contains("action-edit-btn")) {
             const prod = products.find(p => p.id === id);
             if (prod) {
@@ -169,9 +210,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const index = products.findIndex(p => p.id === id);
         if (index !== -1) {
-            products[index] = productData; // Actualiza el existente
+            products[index] = productData;
+            alert("Producto actualizado");
         } else {
-            products.push(productData); // Agrega uno nuevo
+            products.push(productData);
+            alert("Producto guardado");
         }
 
         localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(products));
@@ -181,7 +224,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const submitBtn = adminForm.querySelector('button[type="submit"]');
         if (submitBtn) submitBtn.textContent = "Guardar producto";
 
-        renderAdminProducts(); // Refresca la vista
+        renderAdminProducts();
     });
 
     // --- RESTO DE EVENTOS ---
@@ -190,18 +233,6 @@ document.addEventListener("DOMContentLoaded", () => {
         if (adminProductId) adminProductId.value = "";
         const submitBtn = adminForm?.querySelector('button[type="submit"]');
         if (submitBtn) submitBtn.textContent = "Guardar producto";
-    });
-
-    addCategoryBtn?.addEventListener("click", () => {
-        const newCat = newCategoryInput.value.trim().toLowerCase();
-        if (!newCat) return;
-        let categories = JSON.parse(localStorage.getItem(CATEGORY_STORAGE_KEY)) || ["parlantes", "smartwatch", "cables", "adaptadores"];
-        if (!categories.includes(newCat)) {
-            categories.push(newCat);
-            localStorage.setItem(CATEGORY_STORAGE_KEY, JSON.stringify(categories));
-            updateCategorySelect();
-            newCategoryInput.value = "";
-        }
     });
 
     document.querySelector("#adminLoginForm")?.addEventListener("submit", (e) => {
@@ -219,6 +250,5 @@ document.addEventListener("DOMContentLoaded", () => {
         location.reload();
     });
 
-    // Iniciar chequeo
     checkSession();
 });
