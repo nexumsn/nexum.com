@@ -1,108 +1,13 @@
 const WHATSAPP_NUMBER = "5493364566962";
-const PRODUCTS_STORAGE_KEY = "nexum-products";
 const CATEGORY_STORAGE_KEY = "nexum-categories";
 const ADMIN_SESSION_KEY = "nexum-admin";
 const ADMIN_PASSWORD = "nexum2026";
 
-const defaultProducts = [
-  {
-    id: 1,
-    name: "Smartwatch D 20",
-    category: "smartwatch",
-    price: 9000,
-    stock: 1,
-    colors: [{ name: "Negro", value: "#050505" }],
-    description: "Reloj inteligente con pantalla tactil y funciones para uso diario.",
-    image: "./assets/smartwatch-d20.png",
-  },
-  {
-    id: 2,
-    name: "Parlante GTS-1867",
-    category: "parlantes",
-    price: 15000,
-    stock: 1,
-    description: "Parlante portatil con diseno compacto, manija y luces de colores.",
-    image: "./assets/parlante-gts-1867.png",
-  },
-  {
-    id: 3,
-    name: "Cable Lightning",
-    category: "cables",
-    price: 2900,
-    stock: 1,
-    description: "Cable USB a Lightning para carga y transferencia de datos.",
-    image: "./assets/cable-lightning.png",
-  },
-  {
-    id: 4,
-    name: "Adaptador HUB USB",
-    category: "adaptadores",
-    price: 8200,
-    stock: 3,
-    description: "Hub USB multiple para conectar accesorios desde una sola entrada.",
-    image: "./assets/adaptador-hub-usb.png",
-  },
-  {
-    id: 5,
-    name: "Cable V8 (micro usb)",
-    category: "cables",
-    price: 1900,
-    stock: 3,
-    colors: [{ name: "Violeta", value: "#6c37b8" }],
-    description: "Cable micro USB reforzado para carga de celulares y accesorios.",
-    image: "./assets/cable-v8-micro-usb.png",
-  },
-];
+// Enlace de Google Sheets publicado como CSV
+const GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRtK_HnvsQnAbP1z_QNZiJ_6YHP403Kb7sUJDXN0SX-zei441nSCBHeV3niy8t6FZWoPCWSipQlZuUh/pub?output=csv";
 
-const defaultCategoriesStrings = [
-  "parlantes",
-  "smartwatch",
-  "cables",
-  "adaptadores",
-];
-
-function loadProducts() {
-  const savedProducts = localStorage.getItem(PRODUCTS_STORAGE_KEY);
-  if (!savedProducts) return [...defaultProducts];
-
-  try {
-    const parsedProducts = JSON.parse(savedProducts);
-    return Array.isArray(parsedProducts) && parsedProducts.length > 0
-      ? parsedProducts
-      : [...defaultProducts];
-  } catch {
-    return [...defaultProducts];
-  }
-}
-
-let products = loadProducts();
-
-// --- LÓGICA DINÁMICA DE CATEGORÍAS ---
-function loadCategories() {
-  const savedCategories = localStorage.getItem(CATEGORY_STORAGE_KEY);
-  let parsedCategories = [...defaultCategoriesStrings];
-
-  if (savedCategories) {
-    try {
-      parsedCategories = JSON.parse(savedCategories);
-    } catch {
-      parsedCategories = [...defaultCategoriesStrings];
-    }
-  }
-
-  return parsedCategories.map((catId) => {
-    const productRef = products.find((p) => p.category === catId);
-    return {
-      id: catId,
-      name: catId.charAt(0).toUpperCase() + catId.slice(1), 
-      image: productRef ? productRef.image : "./assets/favicon.png",
-    };
-  });
-}
-
-let categories = loadCategories();
-// ------------------------------------
-
+let products = [];
+let categories = [];
 const cart = new Map();
 
 const productsGrid = document.querySelector("#productsGrid");
@@ -122,24 +27,6 @@ const trustSection = document.querySelector(".trust-section");
 const carouselTrack = document.querySelector("#carouselTrack");
 const carouselDots = document.querySelectorAll(".carousel-dot");
 const carouselSlides = document.querySelectorAll(".carousel-slide");
-const adminOpen = document.querySelector("#adminOpen");
-const adminClose = document.querySelector("#adminClose");
-const adminPanel = document.querySelector("#adminPanel");
-const adminLogin = document.querySelector("#adminLogin");
-const adminLoginForm = document.querySelector("#adminLoginForm");
-const adminPassword = document.querySelector("#adminPassword");
-const adminLoginMessage = document.querySelector("#adminLoginMessage");
-const adminForm = document.querySelector("#adminForm");
-const adminProductId = document.querySelector("#adminProductId");
-const adminName = document.querySelector("#adminName");
-const adminCategory = document.querySelector("#adminCategory");
-const adminPrice = document.querySelector("#adminPrice");
-const adminStock = document.querySelector("#adminStock");
-const adminDescription = document.querySelector("#adminDescription");
-const adminColors = document.querySelector("#adminColors");
-const adminImage = document.querySelector("#adminImage");
-const adminClear = document.querySelector("#adminClear");
-const adminProducts = document.querySelector("#adminProducts");
 
 let currentSlide = 0;
 let carouselTimer;
@@ -151,6 +38,86 @@ const money = new Intl.NumberFormat("es-AR", {
   maximumFractionDigits: 0,
 });
 
+// Función auxiliar para procesar el archivo CSV de Google Sheets de forma segura
+function parseCSV(text) {
+  const lines = text.split(/\r?\n/);
+  return lines.filter(line => line.trim() !== "").map(line => {
+    const result = [];
+    let current = '';
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      if (char === '"') {
+        inQuotes = !inQuotes;
+      } else if (char === ',' && !inQuotes) {
+        result.push(current.trim());
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+    result.push(current.trim());
+    return result;
+  });
+}
+
+// Carga los productos directamente desde Google Sheets en tiempo real
+async function fetchProductsFromSheets() {
+  try {
+    const response = await fetch(GOOGLE_SHEET_CSV_URL);
+    if (!response.ok) throw new Error("No se pudo conectar con Google Sheets");
+    
+    const csvText = await response.text();
+    const parsedRows = parseCSV(csvText);
+    
+    // Quitamos la primera fila que contiene los encabezados (id, name, etc)
+    const dataRows = parsedRows.slice(1);
+    
+    return dataRows.map(row => {
+      return {
+        id: Number(row[0]),
+        name: row[1] || "Producto sin nombre",
+        category: (row[2] || "general").toLowerCase().trim(),
+        price: Number(row[3]) || 0,
+        stock: Number(row[4]) || 0,
+        description: row[5] || "",
+        image: row[6] || "./assets/favicon.png",
+        colors: row[7] ? parseAdminColors(row[7]) : null
+      };
+    });
+  } catch (error) {
+    console.error("Error cargando base de datos, usando datos locales de respaldo:", error);
+    return [];
+  }
+}
+
+function parseAdminColors(value) {
+  if (!value) return null;
+  return value
+    .split(",")
+    .map((entry) => {
+      const parts = entry.split(":");
+      const name = parts[0]?.trim();
+      const colorValue = parts[1]?.trim();
+      if (!name) return null;
+      return { name, value: colorValue || "#111111" };
+    })
+    .filter(Boolean);
+}
+
+// Genera categorías automáticas basadas en los productos existentes en el Sheets
+function loadCategories() {
+  const uniqueCategories = [...new Set(products.map(p => p.category))];
+  return uniqueCategories.map((catId) => {
+    const productRef = products.find((p) => p.category === catId);
+    return {
+      id: catId,
+      name: catId.charAt(0).toUpperCase() + catId.slice(1), 
+      image: productRef ? productRef.image : "./assets/favicon.png",
+    };
+  });
+}
+
 function getCategoryName(categoryId) {
   return categories.find((category) => category.id === categoryId)?.name || categoryId;
 }
@@ -161,6 +128,7 @@ function getCategoryFromHash() {
   return categories.some((category) => category.id === categoryId) ? categoryId : null;
 }
 
+// Sincroniza la URL con la categoría seleccionada para permitir navegación fluida
 function setCategoryHash(categoryId) {
   if (categoryId) {
     window.location.hash = `categoria=${categoryId}`;
@@ -174,10 +142,7 @@ function scrollCatalogToTop() {
   requestAnimationFrame(() => {
     const headerHeight = document.querySelector(".site-header")?.offsetHeight || 0;
     const top = catalogSection.getBoundingClientRect().top + window.scrollY - headerHeight - 12;
-    window.scrollTo({
-      top: Math.max(top, 0),
-      behavior: "smooth",
-    });
+    window.scrollTo({ top: Math.max(top, 0), behavior: "smooth" });
   });
 }
 
@@ -202,7 +167,6 @@ function renderCategories() {
     .join("");
 }
 
-// --- MODIFICADO: Render de productos con validación de Stock ---
 function renderProducts(categoryId) {
   const visibleProducts = products.filter((product) => product.category === categoryId);
 
@@ -219,7 +183,6 @@ function renderProducts(categoryId) {
     ${visibleProducts
     .map(
       (product) => {
-        // Validación de Stock
         const isOutOfStock = product.stock <= 0;
         const btnDisabled = isOutOfStock ? 'disabled' : '';
         const btnText = isOutOfStock ? 'Agotado' : 'Agregar';
@@ -285,14 +248,8 @@ function showSlide(index) {
   });
 }
 
-function nextSlide() {
-  showSlide(currentSlide + 1);
-}
-
-function startCarousel() {
-  clearInterval(carouselTimer);
-  carouselTimer = setInterval(nextSlide, 4500);
-}
+function nextSlide() { showSlide(currentSlide + 1); }
+function startCarousel() { clearInterval(carouselTimer); carouselTimer = setInterval(nextSlide, 4500); }
 
 function getCartLines() {
   return [...cart.values()].map((item) => {
@@ -301,7 +258,6 @@ function getCartLines() {
   });
 }
 
-// --- MODIFICADO: Render de Carrito con validación en el botón "+" ---
 function renderCart() {
   const lines = getCartLines();
   const totalQuantity = lines.reduce((sum, item) => sum + item.quantity, 0);
@@ -323,13 +279,11 @@ function renderCart() {
             ${item.selectedColor ? `<span class="cart-item-color">Color: ${item.selectedColor}</span>` : ""}
             <div class="quantity-row">
               <div class="quantity-controls" aria-label="Cantidad de ${item.name}">
-                <button type="button" data-decrease="${item.cartKey}" aria-label="Restar ${item.name}">-</button>
+                <button type="button" data-decrease="${item.cartKey}">-</button>
                 <strong>${item.quantity}</strong>
-                <button type="button" data-increase="${item.cartKey}" aria-label="Sumar ${item.name}" ${item.quantity >= item.stock ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''}>+</button>
+                <button type="button" data-increase="${item.cartKey}" ${item.quantity >= item.stock ? 'disabled style="opacity: 0.5; cursor: not-allowed;"' : ''}>+</button>
               </div>
-              <button class="remove-button" type="button" data-remove="${item.cartKey}">
-                Quitar
-              </button>
+              <button class="remove-button" type="button" data-remove="${item.cartKey}">Quitar</button>
             </div>
           </div>
         </article>
@@ -344,11 +298,8 @@ function getSelectedColor(productId) {
   return document.querySelector(`input[name="color-${productId}"]:checked`)?.value || product.colors[0].name;
 }
 
-function getCartKey(productId, colorName = "") {
-  return colorName ? `${productId}-${colorName}` : String(productId);
-}
+function getCartKey(productId, colorName = "") { return colorName ? `${productId}-${colorName}` : String(productId); }
 
-// --- MODIFICADO: Agregar al carrito con límite de stock ---
 function addToCart(productId, colorName = getSelectedColor(productId)) {
   const product = products.find((entry) => entry.id === productId);
   if (!product) return;
@@ -356,9 +307,8 @@ function addToCart(productId, colorName = getSelectedColor(productId)) {
   const key = getCartKey(productId, colorName);
   const current = cart.get(key) || { id: productId, key, color: colorName, quantity: 0 };
 
-  // Evitar agregar más del stock disponible
   if (current.quantity >= product.stock) {
-    alert(`⚠️ Stock máximo alcanzado: Sólo quedan ${product.stock} unidades de ${product.name}.`);
+    alert(`⚠️ Stock máximo alcanzado: Sólo quedan ${product.stock} unidades.`);
     return;
   }
 
@@ -367,19 +317,12 @@ function addToCart(productId, colorName = getSelectedColor(productId)) {
   openCart();
 }
 
-// --- MODIFICADO: Sumar línea del carrito con límite de stock ---
+// Incrementa la cantidad de un artículo validando contra el stock del Sheets
 function increaseCartLine(cartKey) {
   const current = cart.get(cartKey);
   if (!current) return;
-
   const product = products.find((entry) => entry.id === current.id);
-  
-  // Evitar sumar más del stock disponible
-  if (current.quantity >= product.stock) {
-    alert(`⚠️ Stock máximo alcanzado: Sólo quedan ${product.stock} unidades de ${product.name}.`);
-    return;
-  }
-
+  if (current.quantity >= product.stock) return;
   cart.set(cartKey, { ...current, quantity: current.quantity + 1 });
   renderCart();
 }
@@ -387,237 +330,26 @@ function increaseCartLine(cartKey) {
 function decreaseFromCart(cartKey) {
   const current = cart.get(cartKey);
   if (!current) return;
-
-  if (current.quantity === 1) {
-    cart.delete(cartKey);
-  } else {
-    cart.set(cartKey, { ...current, quantity: current.quantity - 1 });
-  }
+  if (current.quantity === 1) { cart.delete(cartKey); } else { cart.set(cartKey, { ...current, quantity: current.quantity - 1 }); }
   renderCart();
 }
 
-function openCart() {
-  cartPanel.classList.add("is-open");
-  cartPanel.setAttribute("aria-hidden", "false");
-  overlay.hidden = false;
-}
-
-function closeCart() {
-  cartPanel.classList.remove("is-open");
-  cartPanel.setAttribute("aria-hidden", "true");
-  overlay.hidden = true;
-}
+function openCart() { cartPanel.classList.add("is-open"); overlay.hidden = false; }
+// Cierra el panel lateral del carrito de compras
+function closeCart() { cartPanel.classList.remove("is-open"); overlay.hidden = true; }
 
 function buildWhatsAppMessage() {
   const lines = getCartLines();
   const total = lines.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const productLines = lines
-    .map(
-      (item) => {
-        const colorText = item.selectedColor
-          ? ` - Color: ${item.selectedColor}`
-          : "";
-        return `- ${item.name}${colorText} x${item.quantity}: ${money.format(item.price * item.quantity)}`;
-      },
-    )
+    .map((item) => `${item.name}${item.selectedColor ? ` (Color: ${item.selectedColor})` : ""} x${item.quantity}: ${money.format(item.price * item.quantity)}`)
     .join("\n");
   return `Hola! Quiero realizar este pedido:\n\n${productLines}\n\nTotal: ${money.format(total)}\n\nQuedo atento/a para coordinar.`;
 }
 
 function checkout() {
   if (cart.size === 0) return;
-  const encodedMessage = encodeURIComponent(buildWhatsAppMessage());
-  window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodedMessage}`, "_blank");
-}
-
-function saveProducts() {
-  localStorage.setItem(PRODUCTS_STORAGE_KEY, JSON.stringify(products));
-}
-
-function refreshCatalog() {
-  categories = loadCategories();
-  if (selectedCategory) {
-    renderProducts(selectedCategory);
-  } else {
-    renderCategories();
-  }
-  renderCart();
-  renderAdminProducts();
-}
-
-function parseAdminColors(value) {
-  return value
-    .split(",")
-    .map((entry) => {
-      const [name, colorValue] = entry.split(":").map((part) => part.trim());
-      if (!name) return null;
-      return {
-        name,
-        value: colorValue || "#111111",
-      };
-    })
-    .filter(Boolean);
-}
-
-function formatAdminColors(colors) {
-  return colors?.map((color) => `${color.name}:${color.value}`).join(", ") || "";
-}
-
-function readImageFile(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
-}
-
-function resetAdminForm() {
-  adminForm.reset();
-  adminProductId.value = "";
-}
-
-function renderAdminProducts() {
-  if (!adminProducts) return;
-  adminProducts.innerHTML = products
-    .map(
-      (product) => `
-        <article class="admin-product">
-          <img src="${product.image}" alt="${product.name}" />
-          <div>
-            <h3>${product.name}</h3>
-            <div class="admin-product-actions">
-              <input
-                class="admin-price-input"
-                type="number"
-                min="0"
-                step="1"
-                value="${product.price}"
-                data-admin-price="${product.id}"
-                aria-label="Precio de ${product.name}"
-              />
-              <button class="back-button" type="button" data-admin-edit="${product.id}">Editar</button>
-              <button class="remove-button" type="button" data-admin-delete="${product.id}">Borrar</button>
-            </div>
-          </div>
-        </article>
-      `,
-    )
-    .join("");
-}
-
-function fillAdminForm(productId) {
-  const product = products.find((entry) => entry.id === productId);
-  if (!product) return;
-
-  adminProductId.value = product.id;
-  adminName.value = product.name;
-  adminCategory.value = product.category;
-  adminPrice.value = product.price;
-  adminStock.value = product.stock;
-  adminDescription.value = product.description;
-  adminColors.value = formatAdminColors(product.colors);
-  adminImage.value = "";
-  adminName.focus();
-}
-
-async function saveAdminProduct(event) {
-  event.preventDefault();
-
-  // 1. Buscamos el ID. Si está vacío, asume que es 0 (producto nuevo)
-  const productId = Number(adminProductId.value) || 0;
-  const currentProduct = products.find((entry) => entry.id === productId);
-  
-  // 2. Lógica a prueba de balas para la imagen
-  let finalImage = "./assets/favicon.png"; // Fallback extremo
-  
-  if (adminImage.files && adminImage.files.length > 0) {
-    // A) Si elegiste un archivo nuevo de tu PC en este momento, usa ese.
-    finalImage = await readImageFile(adminImage.files[0]);
-  } else if (currentProduct && currentProduct.image) {
-    // B) Si NO subiste nada nuevo, pero el producto ya existía, ¡MANTIENE LA SUYA!
-    finalImage = currentProduct.image;
-  }
-
-  const colors = parseAdminColors(adminColors.value);
-  
-  const product = {
-    id: productId || Math.max(0, ...products.map((entry) => entry.id), 0) + 1,
-    name: adminName.value.trim(),
-    category: adminCategory.value,
-    price: Number(adminPrice.value),
-    stock: Number(adminStock.value),
-    description: adminDescription.value.trim(),
-    image: finalImage,
-  };
-
-  if (colors.length > 0) product.colors = colors;
-
-  if (currentProduct) {
-    products = products.map((entry) => (entry.id === productId ? product : entry));
-  } else {
-    products = [...products, product];
-  }
-
-  saveProducts();
-  resetAdminForm();
-  refreshCatalog();
-  
-  // Te agrego un mensajito para que sepas que guardó bien
-  alert("¡Producto actualizado correctamente!"); 
-}
-
-function deleteAdminProduct(productId) {
-  const product = products.find((entry) => entry.id === productId);
-  if (!product || !confirm(`Borrar ${product.name}?`)) return;
-
-  products = products.filter((entry) => entry.id !== productId);
-  [...cart.entries()].forEach(([key, item]) => {
-    if (item.id === productId) cart.delete(key);
-  });
-  saveProducts();
-  resetAdminForm();
-  refreshCatalog();
-}
-
-function updateAdminPrice(productId, price) {
-  products = products.map((product) =>
-    product.id === productId ? { ...product, price } : product,
-  );
-  saveProducts();
-  refreshCatalog();
-}
-
-function openAdminPanel() {
-  adminPanel.hidden = false;
-  renderAdminProducts();
-}
-
-function closeAdminPanel() {
-  adminPanel.hidden = true;
-}
-
-function unlockAdmin() {
-  localStorage.setItem(ADMIN_SESSION_KEY, "true");
-  adminLogin.classList.add("is-hidden");
-  adminOpen.classList.remove("is-hidden");
-  openAdminPanel();
-}
-
-function initAdmin() {
-  const params = new URLSearchParams(window.location.search);
-  const requestedAdmin = params.get("admin") === "1";
-  const isUnlocked = localStorage.getItem(ADMIN_SESSION_KEY) === "true";
-
-  if (!requestedAdmin && !isUnlocked) return;
-  if (isUnlocked) {
-    adminOpen.classList.remove("is-hidden");
-    if (requestedAdmin) openAdminPanel();
-    return;
-  }
-
-  adminLogin.classList.remove("is-hidden");
-  adminPassword.focus();
+  window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(buildWhatsAppMessage())}`, "_blank");
 }
 
 document.addEventListener("click", (event) => {
@@ -627,96 +359,45 @@ document.addEventListener("click", (event) => {
   const increaseId = event.target.closest("[data-increase]")?.dataset.increase;
   const decreaseId = event.target.closest("[data-decrease]")?.dataset.decrease;
   const removeId = event.target.closest("[data-remove]")?.dataset.remove;
-  const adminEditId = event.target.closest("[data-admin-edit]")?.dataset.adminEdit;
-  const adminDeleteId = event.target.closest("[data-admin-delete]")?.dataset.adminDelete;
 
-  if (categoryId) {
-    selectedCategory = categoryId;
-    setCategoryHash(selectedCategory);
-    renderProducts(selectedCategory);
-    scrollCatalogToTop();
-  }
-  if (backCategories) {
-    selectedCategory = null;
-    setCategoryHash(null);
-    renderCategories();
-    scrollCatalogToTop();
-  }
+  if (categoryId) { selectedCategory = categoryId; setCategoryHash(selectedCategory); renderProducts(selectedCategory); scrollCatalogToTop(); }
+  if (backCategories) { selectedCategory = null; setCategoryHash(null); renderCategories(); scrollCatalogToTop(); }
   if (addId) addToCart(Number(addId));
   if (increaseId) increaseCartLine(increaseId);
   if (decreaseId) decreaseFromCart(decreaseId);
-  if (removeId) {
-    cart.delete(removeId);
-    renderCart();
-  }
-  if (adminEditId) fillAdminForm(Number(adminEditId));
-  if (adminDeleteId) deleteAdminProduct(Number(adminDeleteId));
+  if (removeId) { cart.delete(removeId); renderCart(); }
 });
 
 document.querySelector("#openCart").addEventListener("click", openCart);
 document.querySelector("#closeCart").addEventListener("click", closeCart);
-if (adminOpen && adminClose && adminClear && adminForm && adminLoginForm && adminProducts) {
-  adminOpen.addEventListener("click", openAdminPanel);
-  adminClose.addEventListener("click", closeAdminPanel);
-  adminClear.addEventListener("click", resetAdminForm);
-  adminForm.addEventListener("submit", saveAdminProduct);
-  adminLoginForm.addEventListener("submit", (event) => {
-    event.preventDefault();
-
-    if (adminPassword.value === ADMIN_PASSWORD) {
-      unlockAdmin();
-    } else {
-      adminLoginMessage.textContent = "Clave incorrecta.";
-    }
-  });
-  adminProducts.addEventListener("change", (event) => {
-    const productId = event.target.dataset.adminPrice;
-    if (!productId) return;
-
-    updateAdminPrice(Number(productId), Number(event.target.value));
-  });
-}
 if (overlay) overlay.addEventListener("click", closeCart);
 if (checkoutButton) checkoutButton.addEventListener("click", checkout);
-document.querySelector("#carouselPrev")?.addEventListener("click", () => {
-  showSlide(currentSlide - 1);
-  startCarousel();
-});
-document.querySelector("#carouselNext")?.addEventListener("click", () => {
-  showSlide(currentSlide + 1);
-  startCarousel();
-});
-carouselDots.forEach((dot) => {
-  dot.addEventListener("click", () => {
-    showSlide(Number(dot.dataset.slide));
-    startCarousel();
-  });
-});
 
-document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape") closeCart();
-});
+document.querySelector("#carouselPrev")?.addEventListener("click", () => { showSlide(currentSlide - 1); startCarousel(); });
+document.querySelector("#carouselNext")?.addEventListener("click", () => { showSlide(currentSlide + 1); startCarousel(); });
+carouselDots.forEach((dot) => { dot.addEventListener("click", () => { showSlide(Number(dot.dataset.slide)); startCarousel(); }); });
+document.addEventListener("keydown", (event) => { if (event.key === "Escape") closeCart(); });
 
 window.addEventListener("hashchange", () => {
   selectedCategory = getCategoryFromHash();
-
-  if (selectedCategory) {
-    renderProducts(selectedCategory);
-    scrollCatalogToTop();
-  } else {
-    renderCategories();
-    scrollCatalogToTop();
-  }
+  if (selectedCategory) { renderProducts(selectedCategory); } else { renderCategories(); }
+  scrollCatalogToTop();
 });
 
-selectedCategory = getCategoryFromHash();
-if (selectedCategory) {
-  renderProducts(selectedCategory);
-  scrollCatalogToTop();
-} else {
-  renderCategories();
+// Inicialización de la aplicación leyendo Google Sheets en tiempo real
+async function initApp() {
+  products = await fetchProductsFromSheets();
+  categories = loadCategories();
+
+  selectedCategory = getCategoryFromHash();
+  if (selectedCategory) {
+    renderProducts(selectedCategory);
+  } else {
+    renderCategories();
+  }
+  renderCart();
+  showSlide(0);
+  startCarousel();
 }
-renderCart();
-if (adminLogin && adminOpen) initAdmin();
-showSlide(0);
-startCarousel();
+
+initApp();
