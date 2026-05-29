@@ -30,6 +30,10 @@ const carouselTrack = document.querySelector("#carouselTrack");
 const carouselDots = document.querySelectorAll(".carousel-dot");
 const carouselSlides = document.querySelectorAll(".carousel-slide");
 
+// Elementos del buscador dinámico
+const searchInput = document.querySelector("#searchInput");
+const searchResultsDropdown = document.querySelector("#searchResultsDropdown");
+
 let currentSlide = 0;
 let carouselTimer;
 
@@ -214,7 +218,7 @@ function renderProducts(categoryId) {
         const btnText = isOutOfStock ? 'Agotado' : 'Agregar';
 
         return `
-        <article class="product-card" style="position: relative;">
+        <article class="product-card" id="prod-card-${product.id}" style="position: relative;">
           ${isOutOfStock ? `<span style="position: absolute; top: 0; left: 0; background: #4b5563; color: #ff3333; padding: 10px 20px; font-size: 14px; font-weight: bold; text-transform: uppercase; letter-spacing: 1.5px; border-bottom-right-radius: 8px; z-index: 10; box-shadow: 2px 2px 5px rgba(0,0,0,0.2);">Sin Stock</span>` : ""}
           <img class="product-image" src="${product.image}" alt="${product.name}" />
           <div class="product-body">
@@ -261,7 +265,7 @@ function renderProducts(categoryId) {
   `;
 }
 
-// 3. MOSTRAR RESULTADOS DE BÚSQUEDA DEL BUSCADOR
+// 3. MOSTRAR RESULTADOS DE BÚSQUEDA DEL BUSCADOR (Cuando presionan enter o escriben en la vista principal)
 function renderSearchResults(query) {
   const lowerQuery = query.toLowerCase();
   
@@ -310,7 +314,7 @@ function renderSearchResults(query) {
       const btnText = isOutOfStock ? 'Agotado' : 'Agregar';
 
       return `
-      <article class="product-card" style="position: relative;">
+      <article class="product-card" id="prod-card-${product.id}" style="position: relative;">
         ${isOutOfStock ? `<span style="position: absolute; top: 0; left: 0; background: #4b5563; color: #ff3333; padding: 10px 20px; font-size: 14px; font-weight: bold; text-transform: uppercase; letter-spacing: 1.5px; border-bottom-right-radius: 8px; z-index: 10; box-shadow: 2px 2px 5px rgba(0,0,0,0.2);">Sin Stock</span>` : ""}
         <img class="product-image" src="${product.image}" alt="${product.name}" />
         <div class="product-body">
@@ -319,16 +323,16 @@ function renderSearchResults(query) {
           <p>${product.description}</p>
           <span class="stock-label">Stock disponible: ${product.stock}</span>
           ${product.colors ? `<div class="product-colors">
-                  <span>${product.colors.length === 1 ? "Unico color disponible" : "Elegir color"}</span>
-                  <div class="swatches" role="radiogroup" aria-label="Color de ${product.name}">
-                    ${product.colors.map((color, colorIndex) =>
-                          `<label class="color-option" title="${color.name}">
-                            <input type="radio" name="color-${product.id}" value="${color.name}" ${colorIndex === 0 ? "checked" : ""} />
-                            <span class="swatch" style="--swatch-color: ${color.value}" aria-hidden="true"></span>
-                            <span>${color.name}</span>
-                          </label>`).join("")}
-                  </div>
-                </div>` : ""}
+                <span>${product.colors.length === 1 ? "Unico color disponible" : "Elegir color"}</span>
+                <div class="swatches" role="radiogroup" aria-label="Color de ${product.name}">
+                  ${product.colors.map((color, colorIndex) =>
+                        `<label class="color-option" title="${color.name}">
+                          <input type="radio" name="color-${product.id}" value="${color.name}" ${colorIndex === 0 ? "checked" : ""} />
+                          <span class="swatch" style="--swatch-color: ${color.value}" aria-hidden="true"></span>
+                          <span>${color.name}</span>
+                        </label>`).join("")}
+                </div>
+              </div>` : ""}
           <div class="product-bottom">
             <span class="price">${money.format(product.price)}</span>
             <button class="add-button" type="button" data-add="${product.id}" ${btnDisabled}>${btnText}</button>
@@ -338,6 +342,71 @@ function renderSearchResults(query) {
     `;
     }).join("")}
   `;
+}
+
+// 4. LÓGICA DEL MENÚ DESPLEGABLE DE SUGERENCIAS (Live Search)
+function renderLiveSearchDropdown(query) {
+  const lowerQuery = query.toLowerCase().trim();
+
+  if (lowerQuery.length < 1) {
+    searchResultsDropdown.hidden = true;
+    searchResultsDropdown.innerHTML = '';
+    return;
+  }
+
+  // Filtrar productos que coincidan por nombre o categoría
+  const matches = products.filter(prod => 
+    prod.name.toLowerCase().includes(lowerQuery) || 
+    getCategoryName(prod.category).toLowerCase().includes(lowerQuery)
+  );
+
+  if (matches.length === 0) {
+    searchResultsDropdown.innerHTML = `<div class="search-no-results">No se encontraron productos</div>`;
+    searchResultsDropdown.hidden = false;
+    return;
+  }
+
+  // Renderizar las filas dinámicas tal cual la referencia visual
+  searchResultsDropdown.innerHTML = matches.map(prod => `
+    <div class="search-suggest-item" data-suggest-id="${prod.id}">
+        <img src="${prod.image}" alt="${prod.name}" class="search-suggest-img">
+        <div class="search-suggest-info">
+            <h4 class="search-suggest-title">${prod.name}</h4>
+            <span class="search-suggest-price">${money.format(prod.price)}</span>
+        </div>
+    </div>
+  `).join('');
+
+  searchResultsDropdown.hidden = false;
+}
+
+// Función ejecutada al hacer clic en una sugerencia del menú desplegable
+function selectSuggestedProduct(productId) {
+  const product = products.find(p => p.id === String(productId));
+  if (!product) return;
+
+  // Limpiar panel flotante y buscador
+  searchResultsDropdown.hidden = true;
+  if (searchInput) searchInput.value = '';
+
+  // Establecer la categoría del producto, renderizar y hacer scroll suave directo a él
+  selectedCategory = product.category;
+  setCategoryHash(selectedCategory);
+  renderProducts(selectedCategory);
+
+  requestAnimationFrame(() => {
+    const targetCard = document.getElementById(`prod-card-${product.id}`);
+    if (targetCard) {
+      const headerHeight = document.querySelector(".site-header")?.offsetHeight || 0;
+      const top = targetCard.getBoundingClientRect().top + window.scrollY - headerHeight - 20;
+      window.scrollTo({ top: Math.max(top, 0), behavior: "smooth" });
+      
+      // Feedback visual opcional: resalta momentáneamente la tarjeta
+      targetCard.style.outline = "2px solid #ff3333";
+      targetCard.style.borderRadius = "8px";
+      setTimeout(() => targetCard.style.outline = "none", 2000);
+    }
+  });
 }
 
 function showSlide(index) {
@@ -441,6 +510,15 @@ function decreaseFromCart(cartKey) {
 function openCart() { cartPanel.classList.add("is-open"); overlay.hidden = false; }
 function closeCart() { cartPanel.classList.remove("is-open"); overlay.hidden = true; }
 
+// Cerrar el panel flotante de búsqueda al hacer clic afuera
+document.addEventListener("click", (e) => {
+  if (searchInput && searchResultsDropdown) {
+    if (!searchInput.contains(e.target) && !searchResultsDropdown.contains(e.target)) {
+      searchResultsDropdown.hidden = true;
+    }
+  }
+});
+
 function buildWhatsAppMessage() {
   const lines = getCartLines();
   const total = lines.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -455,7 +533,7 @@ function checkout() {
   window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(buildWhatsAppMessage())}`, "_blank");
 }
 
-// CAPTURA DE EVENTOS DE CLICS
+// CAPTURA DE EVENTOS DE CLICS GLOBAL
 document.addEventListener("click", (event) => {
   const categoryId = event.target.closest("[data-category]")?.dataset.category;
   const backCategories = event.target.closest("[data-back-categories]");
@@ -463,6 +541,7 @@ document.addEventListener("click", (event) => {
   const increaseId = event.target.closest("[data-increase]")?.dataset.increase;
   const decreaseId = event.target.closest("[data-decrease]")?.dataset.decrease;
   const removeId = event.target.closest("[data-remove]")?.dataset.remove;
+  const suggestItem = event.target.closest("[data-suggest-id]");
 
   if (categoryId) { 
     selectedCategory = categoryId; 
@@ -472,8 +551,6 @@ document.addEventListener("click", (event) => {
   }
   
   if (backCategories) { 
-    // Limpiar el buscador si existía texto
-    const searchInput = document.getElementById('searchInput');
     if (searchInput) searchInput.value = '';
 
     currentSort = 'default'; 
@@ -483,8 +560,12 @@ document.addEventListener("click", (event) => {
     scrollCatalogToTop(); 
   }
   
+  if (suggestItem) {
+    selectSuggestedProduct(suggestItem.dataset.suggestId);
+  }
+  
   if (addId) addToCart(String(addId)); 
-  if (increaseId) startCarousel; // Ajuste menor de scope si fuese necesario, mantenido igual
+  if (increaseId) startCarousel; 
   if (increaseId) increaseCartLine(increaseId);
   if (decreaseId) decreaseFromCart(decreaseId);
   if (removeId) { cart.delete(removeId); renderCart(); }
@@ -495,8 +576,6 @@ document.addEventListener("change", (event) => {
   if (event.target.id === "sortSelect") {
     currentSort = event.target.value;
     
-    // Si hay una búsqueda activa, reordena los resultados de esa búsqueda
-    const searchInput = document.getElementById('searchInput');
     if (searchInput && searchInput.value.trim().length > 0) {
       renderSearchResults(searchInput.value.trim());
     } else {
@@ -506,13 +585,17 @@ document.addEventListener("change", (event) => {
   }
 });
 
-// CAPTURA DE ESCRITURA EN EL BUSCADOR (Búsqueda en tiempo real)
-document.querySelector("#searchInput")?.addEventListener("input", (event) => {
-  const query = event.target.value.trim();
-  if (query.length > 0) {
-    renderSearchResults(query);
+// CAPTURA DE ESCRITURA EN EL BUSCADOR (Búsqueda y sugerencias en tiempo real)
+searchInput?.addEventListener("input", (event) => {
+  const query = event.target.value;
+  
+  // 1. Mostrar/Actualizar el desplegable flotante de sugerencias rápidas
+  renderLiveSearchDropdown(query);
+  
+  // 2. Sincronizar el contenedor principal de la grilla si el usuario prefiere ver los resultados ahí
+  if (query.trim().length > 0) {
+    renderSearchResults(query.trim());
   } else {
-    // Si borra por completo el texto, vuelve a la vista donde estaba parado
     if (selectedCategory) {
       renderProducts(selectedCategory);
     } else {
