@@ -68,10 +68,13 @@
           <p class="section-copy" id="catalogDescription">Elegi la categoria deseada.</p>
         </div>
 
-        <div class="sorting-controls" id="sortingControls" style="display: none; margin-bottom: 20px; gap: 10px; flex-wrap: wrap;">
-          <button class="sort-btn" data-sort="default">Por defecto</button>
-          <button class="sort-btn" data-sort="price-low">Menor precio</button>
-          <button class="sort-btn" data-sort="price-high">Mayor precio</button>
+        <!-- MENÚ DESPLEGABLE DE ORDENAMIENTO -->
+        <div class="sorting-controls" id="sortingControls" style="display: none; margin-bottom: 20px;">
+          <select id="sortSelect" class="sort-dropdown" aria-label="Ordenar productos">
+            <option value="default">Ordenar por: Por defecto</option>
+            <option value="price-low">Ordenar por: Menor precio</option>
+            <option value="price-high">Ordenar por: Mayor precio</option>
+          </select>
         </div>
 
         <div class="products-grid" id="productsGrid" aria-live="polite"></div>
