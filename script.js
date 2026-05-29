@@ -150,7 +150,7 @@ function scrollCatalogToTop() {
 }
 
 function renderCategories() {
-  // Ocultar botones de ordenamiento de precio en el menú principal
+  // Ocultar controles de ordenamiento de precio en el menú principal
   const sortingControls = document.getElementById('sortingControls');
   if (sortingControls) sortingControls.style.display = 'none';
 
@@ -185,7 +185,7 @@ function renderProducts(categoryId) {
     return 0; 
   });
 
-  // Mostrar los botones de ordenamiento de precio
+  // Mostrar el menú desplegable de ordenamiento de precio
   const sortingControls = document.getElementById('sortingControls');
   if (sortingControls) sortingControls.style.display = 'flex';
 
@@ -378,9 +378,6 @@ document.addEventListener("click", (event) => {
   const increaseId = event.target.closest("[data-increase]")?.dataset.increase;
   const decreaseId = event.target.closest("[data-decrease]")?.dataset.decrease;
   const removeId = event.target.closest("[data-remove]")?.dataset.remove;
-  
-  // Captura el clic en los botones de ordenamiento de precio
-  const sortType = event.target.dataset.sort;
 
   if (categoryId) { 
     selectedCategory = categoryId; 
@@ -390,23 +387,28 @@ document.addEventListener("click", (event) => {
   }
   
   if (backCategories) { 
-    currentSort = 'default'; // Resetea el filtro al volver atrás
+    // Resetear el menú desplegable visualmente al volver atrás
+    const sortSelect = document.getElementById('sortSelect');
+    if (sortSelect) sortSelect.value = 'default';
+
+    currentSort = 'default'; 
     selectedCategory = null; 
     setCategoryHash(null); 
     renderCategories(); 
     scrollCatalogToTop(); 
-  }
-
-  if (sortType) {
-    currentSort = sortType;
-    renderProducts(selectedCategory); // Recarga los productos con el nuevo orden
-    scrollCatalogToTop();
   }
   
   if (addId) addToCart(String(addId)); 
   if (increaseId) increaseCartLine(increaseId);
   if (decreaseId) decreaseFromCart(decreaseId);
   if (removeId) { cart.delete(removeId); renderCart(); }
+});
+
+// CAPTURA DE CAMBIO EN EL MENÚ DESPLEGABLE
+document.querySelector("#sortSelect")?.addEventListener("change", (event) => {
+  currentSort = event.target.value;
+  renderProducts(selectedCategory); // Recarga los productos con el nuevo orden seleccionado
+  scrollCatalogToTop();
 });
 
 document.querySelector("#openCart").addEventListener("click", openCart);
