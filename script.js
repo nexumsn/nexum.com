@@ -261,6 +261,85 @@ function renderProducts(categoryId) {
   `;
 }
 
+// 3. MOSTRAR RESULTADOS DE BÚSQUEDA DEL BUSCADOR
+function renderSearchResults(query) {
+  const lowerQuery = query.toLowerCase();
+  
+  // Filtra productos por nombre o descripción
+  const filteredProducts = products.filter(p => 
+    p.name.toLowerCase().includes(lowerQuery) || 
+    p.description.toLowerCase().includes(lowerQuery)
+  );
+
+  // Ordenamiento de precios para la búsqueda
+  const sortedProducts = [...filteredProducts].sort((a, b) => {
+    if (currentSort === 'price-low') return a.price - b.price;
+    if (currentSort === 'price-high') return b.price - a.price;
+    return 0; 
+  });
+
+  heroCarousel?.classList.add("is-hidden");
+  infoBand?.classList.add("is-hidden");
+  trustSection?.classList.add("is-hidden");
+  catalogTitle.textContent = "Resultados de búsqueda";
+  catalogDescription.textContent = filteredProducts.length > 0 ? `Mostrando resultados para "${query}"` : `No hay resultados para "${query}"`;
+  productsGrid.className = "products-grid";
+
+  if (filteredProducts.length === 0) {
+    productsGrid.innerHTML = `
+      <div class="products-toolbar">
+        <button class="back-button" type="button" data-back-categories>Volver a categorias</button>
+      </div>
+      <p style="text-align: center; width: 100%; grid-column: 1 / -1; padding: 40px 20px; color: #6b7280;">Intenta con otras palabras.</p>
+    `;
+    return;
+  }
+
+  productsGrid.innerHTML = `
+    <div class="products-toolbar">
+      <button class="back-button" type="button" data-back-categories>Volver a categorias</button>
+      <select id="sortSelect" class="sort-dropdown">
+        <option value="default" ${currentSort === 'default' ? 'selected' : ''}>Ordenar por: Destacados</option>
+        <option value="price-low" ${currentSort === 'price-low' ? 'selected' : ''}>Precio: Menor a Mayor</option>
+        <option value="price-high" ${currentSort === 'price-high' ? 'selected' : ''}>Precio: Mayor a Menor</option>
+      </select>
+    </div>
+    ${sortedProducts.map((product) => {
+      const isOutOfStock = product.stock <= 0;
+      const btnDisabled = isOutOfStock ? 'disabled' : '';
+      const btnText = isOutOfStock ? 'Agotado' : 'Agregar';
+
+      return `
+      <article class="product-card" style="position: relative;">
+        ${isOutOfStock ? `<span style="position: absolute; top: 0; left: 0; background: #4b5563; color: #ff3333; padding: 10px 20px; font-size: 14px; font-weight: bold; text-transform: uppercase; letter-spacing: 1.5px; border-bottom-right-radius: 8px; z-index: 10; box-shadow: 2px 2px 5px rgba(0,0,0,0.2);">Sin Stock</span>` : ""}
+        <img class="product-image" src="${product.image}" alt="${product.name}" />
+        <div class="product-body">
+          <span class="product-category">${getCategoryName(product.category)}</span>
+          <h3>${product.name}</h3>
+          <p>${product.description}</p>
+          <span class="stock-label">Stock disponible: ${product.stock}</span>
+          ${product.colors ? `<div class="product-colors">
+                  <span>${product.colors.length === 1 ? "Unico color disponible" : "Elegir color"}</span>
+                  <div class="swatches" role="radiogroup" aria-label="Color de ${product.name}">
+                    ${product.colors.map((color, colorIndex) =>
+                          `<label class="color-option" title="${color.name}">
+                            <input type="radio" name="color-${product.id}" value="${color.name}" ${colorIndex === 0 ? "checked" : ""} />
+                            <span class="swatch" style="--swatch-color: ${color.value}" aria-hidden="true"></span>
+                            <span>${color.name}</span>
+                          </label>`).join("")}
+                  </div>
+                </div>` : ""}
+          <div class="product-bottom">
+            <span class="price">${money.format(product.price)}</span>
+            <button class="add-button" type="button" data-add="${product.id}" ${btnDisabled}>${btnText}</button>
+          </div>
+        </div>
+      </article>
+    `;
+    }).join("")}
+  `;
+}
+
 function showSlide(index) {
   if (!carouselTrack || carouselSlides.length === 0) return;
   currentSlide = (index + carouselSlides.length) % carouselSlides.length;
@@ -393,6 +472,10 @@ document.addEventListener("click", (event) => {
   }
   
   if (backCategories) { 
+    // Limpiar el buscador si existía texto
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) searchInput.value = '';
+
     currentSort = 'default'; 
     selectedCategory = null; 
     setCategoryHash(null); 
@@ -401,17 +484,40 @@ document.addEventListener("click", (event) => {
   }
   
   if (addId) addToCart(String(addId)); 
+  if (increaseId) startCarousel; // Ajuste menor de scope si fuese necesario, mantenido igual
   if (increaseId) increaseCartLine(increaseId);
   if (decreaseId) decreaseFromCart(decreaseId);
   if (removeId) { cart.delete(removeId); renderCart(); }
 });
 
-// CAPTURA DE CAMBIO EN EL MENÚ DESPLEGABLE (Modificado para funcionar con el HTML inyectado)
+// CAPTURA DE CAMBIO EN EL MENÚ DESPLEGABLE DE ORDENAMIENTO
 document.addEventListener("change", (event) => {
   if (event.target.id === "sortSelect") {
     currentSort = event.target.value;
-    renderProducts(selectedCategory); // Recarga los productos con el nuevo orden seleccionado
+    
+    // Si hay una búsqueda activa, reordena los resultados de esa búsqueda
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput && searchInput.value.trim().length > 0) {
+      renderSearchResults(searchInput.value.trim());
+    } else {
+      renderProducts(selectedCategory); 
+    }
     scrollCatalogToTop();
+  }
+});
+
+// CAPTURA DE ESCRITURA EN EL BUSCADOR (Búsqueda en tiempo real)
+document.querySelector("#searchInput")?.addEventListener("input", (event) => {
+  const query = event.target.value.trim();
+  if (query.length > 0) {
+    renderSearchResults(query);
+  } else {
+    // Si borra por completo el texto, vuelve a la vista donde estaba parado
+    if (selectedCategory) {
+      renderProducts(selectedCategory);
+    } else {
+      renderCategories();
+    }
   }
 });
 
