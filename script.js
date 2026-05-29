@@ -9,6 +9,8 @@ const GOOGLE_SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vR
 let products = [];
 let categories = [];
 const cart = new Map();
+let selectedCategory = null;
+let currentSort = 'default'; // Guarda el orden de precio seleccionado
 
 const productsGrid = document.querySelector("#productsGrid");
 const cartPanel = document.querySelector("#cartPanel");
@@ -30,7 +32,6 @@ const carouselSlides = document.querySelectorAll(".carousel-slide");
 
 let currentSlide = 0;
 let carouselTimer;
-let selectedCategory = null;
 
 const money = new Intl.NumberFormat("es-AR", {
   style: "currency",
@@ -71,7 +72,7 @@ async function fetchProductsFromSheets() {
     
     return dataRows.map(row => {
       return {
-        id: String(row[0]).trim(), // Acá está la magia: ahora acepta texto como AUR-A6S-CEL
+        id: String(row[0]).trim(),
         name: row[1] || "Producto sin nombre",
         category: (row[2] || "general").toLowerCase().trim(),
         price: Number(row[3]) || 0,
@@ -101,9 +102,17 @@ function parseAdminColors(value) {
     .filter(Boolean);
 }
 
+// 1. ACOMODAR CATEGORÍAS (Aquí elegís el orden del menú principal)
 function loadCategories() {
+  const order = ["auriculares", "smartwatch", "parlantes", "cables", "adaptadores"];
+  
   const uniqueCategories = [...new Set(products.map(p => p.category))];
-  return uniqueCategories.map((catId) => {
+  
+  return uniqueCategories.sort((a, b) => {
+    const indexA = order.indexOf(a) === -1 ? 99 : order.indexOf(a);
+    const indexB = order.indexOf(b) === -1 ? 99 : order.indexOf(b);
+    return indexA - indexB;
+  }).map((catId) => {
     const productRef = products.find((p) => p.category === catId);
     return {
       id: catId,
@@ -141,6 +150,10 @@ function scrollCatalogToTop() {
 }
 
 function renderCategories() {
+  // Ocultar botones de ordenamiento de precio en el menú principal
+  const sortingControls = document.getElementById('sortingControls');
+  if (sortingControls) sortingControls.style.display = 'none';
+
   heroCarousel?.classList.remove("is-hidden");
   infoBand?.classList.remove("is-hidden");
   trustSection?.classList.remove("is-hidden");
@@ -161,8 +174,20 @@ function renderCategories() {
     .join("");
 }
 
+// 2. MOSTRAR PRODUCTOS + ORDENAR POR PRECIO
 function renderProducts(categoryId) {
   const visibleProducts = products.filter((product) => product.category === categoryId);
+
+  // Aplicar filtro de ordenamiento por precio
+  const sortedProducts = [...visibleProducts].sort((a, b) => {
+    if (currentSort === 'price-low') return a.price - b.price;
+    if (currentSort === 'price-high') return b.price - a.price;
+    return 0; 
+  });
+
+  // Mostrar los botones de ordenamiento de precio
+  const sortingControls = document.getElementById('sortingControls');
+  if (sortingControls) sortingControls.style.display = 'flex';
 
   heroCarousel?.classList.add("is-hidden");
   infoBand?.classList.add("is-hidden");
@@ -170,11 +195,12 @@ function renderProducts(categoryId) {
   catalogTitle.textContent = getCategoryName(categoryId);
   catalogDescription.textContent = "Productos disponibles en esta categoria.";
   productsGrid.className = "products-grid";
+  
   productsGrid.innerHTML = `
     <div class="products-toolbar">
       <button class="back-button" type="button" data-back-categories>Volver a categorias</button>
     </div>
-    ${visibleProducts
+    ${sortedProducts
     .map(
       (product) => {
         const isOutOfStock = product.stock <= 0;
@@ -344,6 +370,7 @@ function checkout() {
   window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(buildWhatsAppMessage())}`, "_blank");
 }
 
+// CAPTURA DE EVENTOS DE CLICS
 document.addEventListener("click", (event) => {
   const categoryId = event.target.closest("[data-category]")?.dataset.category;
   const backCategories = event.target.closest("[data-back-categories]");
@@ -351,11 +378,31 @@ document.addEventListener("click", (event) => {
   const increaseId = event.target.closest("[data-increase]")?.dataset.increase;
   const decreaseId = event.target.closest("[data-decrease]")?.dataset.decrease;
   const removeId = event.target.closest("[data-remove]")?.dataset.remove;
-
-  if (categoryId) { selectedCategory = categoryId; setCategoryHash(selectedCategory); renderProducts(selectedCategory); scrollCatalogToTop(); }
-  if (backCategories) { selectedCategory = null; setCategoryHash(null); renderCategories(); scrollCatalogToTop(); }
   
-  // Acá también le sacamos la conversión de número para que acepte tus códigos de letras
+  // Captura el clic en los botones de ordenamiento de precio
+  const sortType = event.target.dataset.sort;
+
+  if (categoryId) { 
+    selectedCategory = categoryId; 
+    setCategoryHash(selectedCategory); 
+    renderProducts(selectedCategory); 
+    scrollCatalogToTop(); 
+  }
+  
+  if (backCategories) { 
+    currentSort = 'default'; // Resetea el filtro al volver atrás
+    selectedCategory = null; 
+    setCategoryHash(null); 
+    renderCategories(); 
+    scrollCatalogToTop(); 
+  }
+
+  if (sortType) {
+    currentSort = sortType;
+    renderProducts(selectedCategory); // Recarga los productos con el nuevo orden
+    scrollCatalogToTop();
+  }
+  
   if (addId) addToCart(String(addId)); 
   if (increaseId) increaseCartLine(increaseId);
   if (decreaseId) decreaseFromCart(decreaseId);
