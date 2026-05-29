@@ -989,3 +989,67 @@ a {
     padding: 18px;
   }
 }
+
+/* --- CONTROLES DE ORDENAMIENTO (MENU DESPLEGABLE) --- */
+.sorting-controls {
+  display: none; /* Se activa dinámicamente mediante JS */
+  justify-content: flex-end;
+  align-items: center;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto 24px auto;
+  padding: 0 clamp(18px, 4vw, 56px);
+  box-sizing: border-box;
+}
+
+.sort-dropdown {
+  background-color: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 16px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 800;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+  appearance: none; /* Elimina el estilo por defecto del sistema */
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  /* Icono de flecha minimalista adaptado al estilo de la tienda */
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23171717' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  background-size: 14px;
+  padding-right: 44px; /* Espacio prudente para que el texto no pise la flecha */
+}
+
+.sort-dropdown:hover {
+  background-color: var(--soft);
+}
+
+.sort-dropdown:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--soft);
+}
+
+.sort-dropdown option {
+  background-color: var(--surface);
+  color: var(--ink);
+  font-weight: 700;
+}
+
+/* Ajuste responsivo para pantallas chicas */
+@media (max-width: 860px) {
+  .sorting-controls {
+    justify-content: center;
+    padding-inline: 14px;
+    margin-bottom: 16px;
+  }
+  .sort-dropdown {
+    width: 100%; /* Ocupa todo el ancho en entornos móviles */
+    text-align: center;
+    background-position: right 20px center;
+  }
+}
